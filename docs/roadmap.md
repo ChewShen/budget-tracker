@@ -10,7 +10,7 @@ When one is picked up, move it to `docs/changelog.md` under the version that shi
 New features are paused while the current app is made sturdier, in this order:
 1. ~~**Data safety**: weekly encrypted backups with a tested restore, and background job health in the app~~ (v0.24.0).
 2. ~~**Known rough edges**: bank-app receipt labels ("Payee Name" read as "Name", "Beneficiary Name", "Transfer Successful"), the goal-ownership gap on money set aside, the bill form's save button that can stay greyed out, and the `npm audit` warnings~~ (v0.24.1; the audit warnings are dev-only, see decisions).
-3. **Browser tests (Playwright)** in CI: add an expense, confirm an Inbox item, record balances, edit a bill.
+3. **Browser tests (Playwright)** in CI: add an expense, confirm an Inbox item, record balances, edit a bill. *On hold (2026-10-04) while the direction is worked out; pick up when asked.*
 4. **Shortcut endpoint hardening**: a rate limit per token; security headers (CSP) on the site.
 5. **Clean-up**: Recharts v3; Tailwind 4 (also clears the dev-only `braces` audit warning); check the August 2026 imported balances, then drop the `monthly_savings` backup table.
 
@@ -56,4 +56,17 @@ New features are paused while the current app is made sturdier, in this order:
 ## Later, bigger
 
 - **Local-first native app** (discussed, not started): an Expo (React Native) app with the data in SQLite on the phone, so nothing is readable by whoever runs the server, it works offline, and reminders become on-device notifications (no VAPID, cron or service-role key). The pure logic in `src/lib/` carries over as is; the screens and the data layer would be rewritten. Optional end-to-end encrypted sync later for multiple devices (PowerSync / ElectricSQL or encrypted backups). First step whenever it's picked up: put the data layer behind an interface (load, save expense, save balances…) with Supabase and local storage as two implementations. **Capturing payments natively:** on Android the app itself could read TnG and bank notifications (a notification listener the user allows under Notification access; needs a native module in an Expo dev build, Play Store review of the permission, or "Allow restricted settings" when installed outside the Play Store), so no MacroDroid and no server needed for capture. On iPhone a native app gains nothing here: iOS never lets apps read other apps' notifications, so Shortcuts (double-tap, Apple Pay automation) or a Share-sheet extension ("share screenshot to the app", read on the phone) stay the way in.
+- **Local-first as a PWA instead of native** (discussed 2026-10-04): possible. The app's local mode already keeps everything in the browser (localStorage, ~5 MB); a real local-first PWA would move it to IndexedDB (or SQLite via WebAssembly) and cache the app for offline use. What works: all entry and analytics offline, nothing leaves the phone, Shortcuts by opening the app with the payment in the link (`/inbox?add=…`, the app pops open). What's lost: nightly reminders (iPhone web apps can't schedule their own notifications; Web Push needs a server), auto-add while the app is closed (runs on next open), automatic backups and multi-device sync (manual export only), and data is tied to the installed icon (removing it removes the data; iOS may clear unused website data, though installed apps are generally kept and can request persistent storage).
+
+  | | Local PWA | Native (Expo + SQLite) |
+  |---|---|---|
+  | Data on the phone | yes | yes |
+  | Offline | yes (with caching) | yes |
+  | Reminders without a server | no | yes |
+  | Shortcut capture | opens the app | silent (App Intents) |
+  | Read TnG/bank notifications | no | Android only |
+  | Storage durability | good when installed | best |
+  | Effort | small: reuse this app | large: new screens, App Store |
+
+  Choose the PWA route for privacy and offline with little work; native when on-device reminders, silent capture or Android notification reading matter.
 - **Optional end-to-end encryption** for accounts that want privacy from the database owner, accepting that server features (nightly reminders, auto-add) wouldn't work for them.
