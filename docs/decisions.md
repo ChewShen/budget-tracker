@@ -113,6 +113,10 @@ Each entry covers what was chosen, why, and what it costs. For what changed and 
 - **Shown where it's noticed:** Settings → Account lists each job's last run; Overview shows a warning when one failed, is late (nightly jobs after 26 hours, the backup after 8 days), or a Shortcut payment couldn't be saved this week. A job that has never run isn't a warning (not set up yet). The rules are pure functions (`src/lib/job-health.ts`), tested.
 - **Privacy:** App-wide rows carry no counts or anyone's data, only ok/failed and an error message; a Shortcut error is visible only to its account.
 
+### Dependency audit: runtime first
+- **Rule:** `npm audit --omit=dev` (what ships to users and the server) must be clean; anything there is fixed straight away. Dev-only findings are judged on whether untrusted input can reach them.
+- **As of v0.24.1:** runtime is clean. `npm audit` reports 7 "high" findings that are all one advisory in `braces` (stack exhaustion from deeply nested glob patterns), pulled in only by Tailwind 3 and `eslint-config-next` at build time, which only ever see the project's own patterns. No fixed `braces` exists; `npm audit fix --force` would jump to Tailwind 4, a breaking rewrite of the styling setup. Left as is; Tailwind 4 is on the roadmap's clean-up list as its own change.
+
 ## 4. Features
 
 ### Salary and interest maths match the spreadsheet

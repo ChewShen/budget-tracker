@@ -49,9 +49,14 @@ CREATE POLICY "Owner manages goals" ON public.goals
   FOR ALL TO authenticated
   USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid());
 
+-- Money set aside can only be for your own goal (also set by 2026-10-04_goal_contributions_owner.sql).
 CREATE POLICY "Owner manages goal contributions" ON public.goal_contributions
   FOR ALL TO authenticated
-  USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid());
+  USING (user_id = auth.uid())
+  WITH CHECK (
+    user_id = auth.uid()
+    AND EXISTS (SELECT 1 FROM public.goals g WHERE g.id = goal_id AND g.user_id = auth.uid())
+  );
 
 -- Check: both tables exist with RLS on, and goals has the discounts column.
 SELECT tablename, rowsecurity FROM pg_tables

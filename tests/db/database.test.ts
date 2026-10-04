@@ -224,6 +224,7 @@ describe("privacy between accounts", () => {
       ["a budget on their category", (o) => ["INSERT INTO budgets (category_id, monthly_limit) VALUES ($1, 100)", [o.category]]],
       ["a bill with their tag", (o) => ["INSERT INTO recurring_sentinel (tag_id) VALUES ($1)", [o.tag]]],
       ["a bill linked to their goal", (o, m) => ["INSERT INTO recurring_sentinel (tag_id, goal_id) VALUES ($1, $2)", [m.tag, o.goal]]],
+      ["money set aside for their goal", (o) => ["INSERT INTO goal_contributions (goal_id, amount) VALUES ($1, 10)", [o.goal]]],
       ["a balance in their savings account", (o) => ["INSERT INTO savings_balances (account_id, month, balance) VALUES ($1, '2026-09-01', 1)", [o.account]]],
       ["a merchant rule with their tag", (o, m) => ["INSERT INTO merchant_rules (pattern, category_id, tag_id) VALUES ('SNEAKY', $1, $2)", [m.category, o.tag]]],
       ["a merchant rule in their category", (o) => ["INSERT INTO merchant_rules (pattern, category_id) VALUES ('SNEAKY2', $1)", [o.category]]],

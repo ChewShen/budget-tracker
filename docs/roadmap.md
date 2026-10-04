@@ -9,10 +9,10 @@ When one is picked up, move it to `docs/changelog.md` under the version that shi
 
 New features are paused while the current app is made sturdier, in this order:
 1. ~~**Data safety**: weekly encrypted backups with a tested restore, and background job health in the app~~ (v0.24.0).
-2. **Known rough edges**: bank-app receipt labels ("Payee Name" read as "Name", "Beneficiary Name", "Transfer Successful"), the goal-ownership gap on money set aside, the bill form's save button that can stay greyed out, and the `npm audit` warnings.
+2. ~~**Known rough edges**: bank-app receipt labels ("Payee Name" read as "Name", "Beneficiary Name", "Transfer Successful"), the goal-ownership gap on money set aside, the bill form's save button that can stay greyed out, and the `npm audit` warnings~~ (v0.24.1; the audit warnings are dev-only, see decisions).
 3. **Browser tests (Playwright)** in CI: add an expense, confirm an Inbox item, record balances, edit a bill.
 4. **Shortcut endpoint hardening**: a rate limit per token; security headers (CSP) on the site.
-5. **Clean-up**: Recharts v3; check the August 2026 imported balances, then drop the `monthly_savings` backup table.
+5. **Clean-up**: Recharts v3; Tailwind 4 (also clears the dev-only `braces` audit warning); check the August 2026 imported balances, then drop the `monthly_savings` backup table.
 
 ## Paused new features (agreed order; tests shipped in v0.22.0, shops it remembers in v0.23.0)
 
@@ -37,15 +37,14 @@ New features are paused while the current app is made sturdier, in this order:
 - **Offline adding**: Service worker + queue so the installed app opens without signal and syncs expenses later.
 - **Duplicate warning**: Ask before saving the same tag, amount and date twice within a minute.
 - **Tune TnG parsing** with real TnG success screens and notifications (the Inbox's "original" text shows what was read).
-- **Bank app receipts (iPhone double-tap)**: the Shortcut already works on any screen, but the payee rules only know TnG's labels. A quick check of bank-style layouts: amount and date are read fine; "Beneficiary Name" isn't a known label (payee left empty), "Payee Name" gives the payee "Name" (bug), and "Transfer Successful" isn't flagged as a transfer. Needs real samples (copied from an Inbox item, names and numbers swapped for fake ones) from each bank app (Maybank MAE, CIMB OCTO, RHB, GXBank…), each added to `tests/ingest.test.ts`.
+- **Bank app receipts (iPhone double-tap)**: the common labels (Payee Name, Beneficiary Name, Recipient Name, Merchant Name, To:, Transfer Successful) are read since v0.24.1. Hong Leong Bank DuitNow transfers since v0.24.2 (from a real sample). One shared reader, not per-bank code: each sample becomes a test and usually a general rule. Still worth real samples from each bank app (copied from an Inbox item, names and numbers swapped for fake ones) to add to `tests/ingest.test.ts`.
 - **Android capture (later)**: the endpoint works from any device; only capturing differs. Android lets automation apps read other apps' notifications, so it can be fully automatic: MacroDroid (or Tasker) "Notification received" from TnG/bank apps → HTTP POST to `/api/ingest` with the `x-api-token` header and `{"text": title + text, "source": "android"}`. Needs: a sentence rule for the payee ("You have paid RM10.00 to NAME"; today's rules expect a label at the start of a line), sample notification texts per app, an Android section in Settings → Automation, the guide and Help. Banks that hide details in notifications ("You have a new transaction") can't be captured this way. Only worth doing once someone using the app has an Android phone.
 - **Bank statement CSV import**: Match against logged expenses and suggest anything missing.
 - **Rename from the bill form**: A "Rename" field in Settings → Monthly bills that renames the underlying tag.
 
 ## Robustness
 
-- See "Now: strengthen what's there" at the top for the agreed list (browser tests, the goal-ownership gap, Recharts v3, …).
-- **Goal ownership on money set aside** (detail): `goal_contributions` checks the owner but not that the goal is yours (the other "points at" checks do). Harmless in practice (another person's goal id is a random UUID you'd never see, and they don't see your rows), but worth a one-line policy for consistency, plus a test case.
+- See "Now: strengthen what's there" at the top for the agreed list (browser tests, Recharts v3, …).
 
 ## Data housekeeping
 
