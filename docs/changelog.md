@@ -15,6 +15,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.24.2] - 2026-10-04
+
+### Fixed
+- **Hong Leong Bank transfers** are read correctly: the amount shown without "RM" ("Transfer Amount (MYR)" above "10.00"), the payee under "To", the payment time, and that it's a transfer.
+- **A reference number containing "RM"** (e.g. "…ORM21103782") is no longer read as an amount of millions, on any receipt.
+- A masked account number ("****1234") is never taken as the payee.
+
+---
+
 ## [0.24.1] - 2026-10-04
 
 ### Fixed
