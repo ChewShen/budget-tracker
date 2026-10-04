@@ -35,6 +35,7 @@ New features are paused while the current app is made sturdier, in this order:
 ## Faster entry
 
 - **Offline adding**: Service worker + queue so the installed app opens without signal and syncs expenses later.
+- **Tag from the transfer reference**: bank transfers often carry a reference you type (Public Bank's "Recipient Reference: breakfast"); a word that matches a tag (Breakfast) or a meal could pick the tag in the Inbox. New feature, paused with the others.
 - **Duplicate warning**: Ask before saving the same tag, amount and date twice within a minute.
 - **Tune TnG parsing** with real TnG success screens and notifications (the Inbox's "original" text shows what was read).
 - **Bank app receipts (iPhone double-tap)**: the common labels (Payee Name, Beneficiary Name, Recipient Name, Merchant Name, To:, Transfer Successful) are read since v0.24.1. Hong Leong Bank DuitNow transfers since v0.24.2 (from a real sample). Public Bank since v0.24.3: its app blocks screenshots, so its receipt is shared to a "Log Receipt" copy of the shortcut (Share sheet) instead. One shared reader, not per-bank code: each sample becomes a test and usually a general rule. Still worth real samples from each bank app (copied from an Inbox item, names and numbers swapped for fake ones) to add to `tests/ingest.test.ts`.
