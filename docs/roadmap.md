@@ -69,4 +69,8 @@ New features are paused while the current app is made sturdier, in this order:
   | Effort | small: reuse this app | large: new screens, App Store |
 
   Choose the PWA route for privacy and offline with little work; native when on-device reminders, silent capture or Android notification reading matter.
+
+  **Automation in a local-only PWA:** the server can't write into the phone's browser storage. Options: the Shortcut opens the app with the payment in the link (works on Android; on iPhone links from Shortcuts open in Safari, whose storage is separate from the home-screen app, so unreliable); a server "drop box" that holds captures until the app collects and deletes them (keeps the quiet double-tap, still needs the server and token); or copy-and-paste (fully local, manual). Only a native app gets fully local *and* quiet capture on iPhone (App Intents).
+
+  **Cost (decided 2026-10-04: stay on PWA + Supabase):** the current setup costs USD 0 (Supabase, Vercel and GitHub free plans) and is the only one with everything working on iPhone. Native on Android is cheap (sideloading an APK is free; Play Store is a one-time USD 25; Expo's free plan builds it). Native on iPhone needs the Apple Developer Program (USD 99/year); a free Apple ID's own builds stop opening after 7 days. If Android capture is ever wanted, a small Android-only companion that captures notifications and posts to `/api/ingest` is the affordable route, not a full rewrite.
 - **Optional end-to-end encryption** for accounts that want privacy from the database owner, accepting that server features (nightly reminders, auto-add) wouldn't work for them.
