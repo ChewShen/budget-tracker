@@ -52,9 +52,8 @@ function BillForm({
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!tagId) return;
+    if (!tagId || !planValid) return; // checked before going busy, so the button can't stay disabled
     setIsBusy(true);
-    if (!planValid) return;
     const changes = {
       expected_amount: toAmount(amount),
       due_day: dueDay ? Number(dueDay) : null,
