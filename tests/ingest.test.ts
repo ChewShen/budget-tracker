@@ -129,6 +129,81 @@ describe("bank app receipts", () => {
     expect(parseCapture({ text }, TODAY)).toEqual({ amount, merchant, date: "2026-10-03", isTransfer });
   });
 
+  // Hong Leong Bank's DuitNow transfer screen: the amount has no "RM" in front ("Transfer Amount
+  // (MYR)" above "10.00"), the payee sits under "To" with the bank and account number, and "From"
+  // is a masked account. Usually captured collapsed ("View more"); both reading orders.
+  const HLB_ROWS = `Successful
+04 Oct 2026 04:29PM
++ Favourite
+Receipt
+Transfer Amount (MYR)
+10.00
+DuitNow
+Reference No.
+20261004HLBBMYKL0101234
+ORM21100000
+From
+****1234
+To
+ALI BIN ABU
+EXAMPLE BANK/EXAMPLE
+FINANCE BERHAD
+1234567890
+View more
+Done`;
+  const HLB_COLUMNS = `Successful
+04 Oct 2026 04:29PM
++ Favourite
+Receipt
+Transfer Amount (MYR)
+10.00
+Reference No.
+From
+To
+Account Type
+Transfer Type
+Recipient Reference
+Transfer Date
+20261004HLBBMYKL0101234
+ORM21100000
+****1234
+ALI BIN ABU
+EXAMPLE BANK/EXAMPLE
+FINANCE BERHAD
+1234567890
+Current/Savings/
+Investment
+DuitNow (previously
+Instant Transfer)
+Fund Transfer
+04 Oct 2026
+DuitNow
+View less
+Done`;
+
+  it.each([
+    ["row by row", HLB_ROWS],
+    ["labels first", HLB_COLUMNS],
+  ])("reads a Hong Leong Bank transfer, %s", (_order, text) => {
+    expect(parseCapture({ text }, "2026-10-04")).toEqual({ amount: 10, merchant: "ALI BIN ABU", date: "2026-10-04", isTransfer: true });
+    expect(timeFromText(text)).toEqual({ hour: 16, minute: 29 });
+    expect(referenceFromText(text)).toContain("20261004HLBBMYKL0101234");
+  });
+
+  it("doesn't read RM inside a reference number as an amount", () => {
+    expect(amountFromText("Reference No.\n20261004HLBBMYKL010\nORM21103782\nRM 10.00")).toBe(10);
+    expect(amountFromText("RM21103782")).toBeNull();
+    expect(amountFromText("Total RM1,250.00")).toBe(1250);
+  });
+
+  it("only takes a number without RM when its label says the currency", () => {
+    expect(amountFromText("Transfer Amount (MYR)\n10.00")).toBe(10);
+    expect(amountFromText("Total (RM)\n1,234.50")).toBe(1234.5);
+    expect(amountFromText("Points earned\n10.00")).toBeNull();
+    expect(amountFromText("Amount\n10.00")).toBeNull(); // no currency: could be anything
+    expect(amountFromText("Total Amount (MYR)\n10.00\nRM 12.00")).toBe(12); // an RM amount still wins
+  });
+
   it("knows a successful transfer from a successful payment", () => {
     expect(looksLikeTransfer("Transfer Successful")).toBe(true);
     expect(looksLikeTransfer("Fund Transfer Completed")).toBe(true);
