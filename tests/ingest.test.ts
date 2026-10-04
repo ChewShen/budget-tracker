@@ -115,6 +115,27 @@ describe("reading a payment screen", () => {
   });
 });
 
+describe("bank app receipts", () => {
+  // Layouts like Malaysian banking apps' success screens (made-up names and numbers).
+  it.each([
+    ["Beneficiary Name", "Transfer Successful\nRM 50.00\nBeneficiary Name\nALI BIN ABU\nReference ID\nMB12345678901\n03 Oct 2026 10:15 AM", "ALI BIN ABU", 50, true],
+    ["Payee Name", "Payment Successful\nAmount\nRM 120.00\nPayee Name\nTNB\nDate\n03 Oct 2026", "TNB", 120, false],
+    ["Recipient Name", "Successful\nMYR 25.00\nRecipient Name\nALI BIN ABU\n03/10/2026", "ALI BIN ABU", 25, false],
+    ["Merchant Name", "Transaction Details\nMYR 15.90\nMerchant Name\nKEDAI CONTOH\nPosted 03 Oct 2026", "KEDAI CONTOH", 15.9, false],
+    ["To:", "Payment Successful\nRM 30.00\nTo: ALI BIN ABU\nDuitNow Transfer\n03 Oct 2026", "ALI BIN ABU", 30, true],
+    ["Payee Name: on one line", "Payment Successful\nRM 88.00\nPayee Name: SYARIKAT AIR CONTOH\n03 Oct 2026", "SYARIKAT AIR CONTOH", 88, false],
+    ["Beneficiary Name, labels first", "Transfer Successful\nRM 10.00\nBeneficiary Name\nBeneficiary Bank\nReference ID\nALI BIN ABU\nExample Bank\nMB12345678901\n03 Oct 2026", "ALI BIN ABU", 10, true],
+  ])("reads %s", (_label, text, merchant, amount, isTransfer) => {
+    expect(parseCapture({ text }, TODAY)).toEqual({ amount, merchant, date: "2026-10-03", isTransfer });
+  });
+
+  it("knows a successful transfer from a successful payment", () => {
+    expect(looksLikeTransfer("Transfer Successful")).toBe(true);
+    expect(looksLikeTransfer("Fund Transfer Completed")).toBe(true);
+    expect(looksLikeTransfer("Payment Successful")).toBe(false);
+  });
+});
+
 describe("amounts", () => {
   it.each([
     ["RM12.50", 12.5],

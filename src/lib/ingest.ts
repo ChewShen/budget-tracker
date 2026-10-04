@@ -50,23 +50,25 @@ export function amountFromText(text: string): number | null {
 }
 
 // A whole-word label at the start of a line, then the name (or nothing: the name is elsewhere).
-// "Recipient" counts only on its own or as "Recipient name": "Recipient Bank/ E-Wallet" is the bank.
+// "Recipient" and "Beneficiary" count only on their own or with "name": "Recipient Bank/ E-Wallet"
+// and "Beneficiary Bank" are the bank. Bank apps say "Payee Name" and "Beneficiary Name".
 const MERCHANT_LABEL =
-  /^\s*(?:paid to|pay to|payment to|transfer to|merchant(?: name)?|payee|receiver(?: name)?|recipient(?: name)?(?=\s*(?:[:\-]|$))|to|at)\b\s*[:\-]?\s*(.*)$/i;
+  /^\s*(?:paid to|pay to|payment to|transfer to|merchant(?: name)?|payee(?: name)?|receiver(?: name)?|(?:recipient|beneficiary)(?:'s)?(?: name)?(?=\s*(?:[:\-]|$))|to|at)\b\s*[:\-]?\s*(.*)$/i;
 // TnG's "Payment Details" value: "Payment - MENG KEE CHAR SIEW RESTAURANT" (may wrap onto two lines).
 const PAYMENT_DASH = /^payment\s*[-–—:]\s*(.+)$/i;
 // Row labels on receipt screens. Screen reading often lists a column of labels and then their
 // values, so a line after "Merchant" can be another label rather than the name.
-// TnG history receipts (Merchant, Payment Details, Wallet Ref…) and success screens right after
-// paying or transferring (Receiver, Transfer to, Recipient Bank/ E-Wallet, DuitNow Ref No.…).
+// TnG history receipts (Merchant, Payment Details, Wallet Ref…), success screens right after
+// paying or transferring (Receiver, Transfer to, Recipient Bank/ E-Wallet, DuitNow Ref No.…), and
+// bank apps' (Payee Name, Beneficiary Name, Beneficiary Bank, Reference ID…).
 const RECEIPT_LABEL =
-  /^(transaction type|merchant(?: name)?|payment details|payment method|date\s*(?:\/|&|and)\s*time|date|time|wallet ref|status|transaction no\.?|reference(?: no\.?)?|ref(?: no\.?)?|duitnow ref(?: no\.?)?|details|amount|total|recipient(?: name)?|receiver(?: name)?|payee|transfer to|transfer type|recipient bank\/?(?:\s*e-wallet)?|e-wallet|account number|account no\.?|id type|remark|remarks|done|transferred|paid|payment successful)$/i;
+  /^(transaction type|merchant(?: name)?|payment details|payment method|date\s*(?:\/|&|and)\s*time|date|time|wallet ref|status|transaction no\.?|reference(?: no\.?)?|ref(?: no\.?)?|duitnow ref(?: no\.?)?|details|amount|total|recipient(?:'s)?(?: name)?|receiver(?: name)?|payee(?: name)?|beneficiary(?:'s)?(?: name)?|beneficiary bank|(?:reference|ref|transaction) id|transfer to|transfer type|recipient bank\/?(?:\s*e-wallet)?|e-wallet|account number|account no\.?|id type|remark|remarks|done|transferred|paid|payment successful)$/i;
 // Values on the same screens that are never the merchant.
 // (Long digit runs are reference numbers; a line of only digits and separators is a date or time.)
 const NOT_A_MERCHANT =
   /duitnow|ewallet|e-wallet|balance|successful|pending|failed|points|transaction|reference|fund transfer|bank\/|^account$|tngd?$|\d{6,}|^[\d\s/:.-]+$/i;
 // Words that mark the screen as a transfer rather than a purchase.
-const TRANSFER = /\btransferred\b|duitnow transfer|fund transfer|transfer to\b/i;
+const TRANSFER = /\btransferred\b|duitnow transfer|fund transfer|transfer to\b|\btransfer (?:successful|completed|done)\b/i;
 
 // Logo fragments and stray symbols read off the screen ("D", "_", "•").
 const isJunk = (line: string) => line.replace(/[^A-Za-z0-9]/g, "").length < 3;
