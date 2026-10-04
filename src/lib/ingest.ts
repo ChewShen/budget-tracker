@@ -64,9 +64,10 @@ export function amountFromText(text: string): number | null {
 
 // A whole-word label at the start of a line, then the name (or nothing: the name is elsewhere).
 // "Recipient" and "Beneficiary" count only on their own or with "name": "Recipient Bank/ E-Wallet"
-// and "Beneficiary Bank" are the bank. Bank apps say "Payee Name" and "Beneficiary Name".
+// and "Beneficiary Bank" are the bank. Bank apps say "Payee Name" and "Beneficiary Name"; Public Bank
+// puts the name under "Recipient Account".
 const MERCHANT_LABEL =
-  /^\s*(?:paid to|pay to|payment to|transfer to|merchant(?: name)?|payee(?: name)?|receiver(?: name)?|(?:recipient|beneficiary)(?:'s)?(?: name)?(?=\s*(?:[:\-]|$))|to|at)\b\s*[:\-]?\s*(.*)$/i;
+  /^\s*(?:paid to|pay to|payment to|transfer to|merchant(?: name)?|payee(?: name)?|receiver(?: name)?|recipient account|(?:recipient|beneficiary)(?:'s)?(?: name)?(?=\s*(?:[:\-]|$))|to|at)\b\s*[:\-]?\s*(.*)$/i;
 // TnG's "Payment Details" value: "Payment - MENG KEE CHAR SIEW RESTAURANT" (may wrap onto two lines).
 const PAYMENT_DASH = /^payment\s*[-–—:]\s*(.+)$/i;
 // Row labels on receipt screens. Screen reading often lists a column of labels and then their
@@ -75,14 +76,14 @@ const PAYMENT_DASH = /^payment\s*[-–—:]\s*(.+)$/i;
 // paying or transferring (Receiver, Transfer to, Recipient Bank/ E-Wallet, DuitNow Ref No.…), and
 // bank apps' (Payee Name, Beneficiary Name, Beneficiary Bank, Reference ID…).
 const RECEIPT_LABEL =
-  /^(transaction type|merchant(?: name)?|payment details|payment method|date\s*(?:\/|&|and)\s*time|date|time|wallet ref|status|transaction no\.?|reference(?: no\.?)?|ref(?: no\.?)?|duitnow ref(?: no\.?)?|details|amount|total|recipient(?:'s)?(?: name)?|receiver(?: name)?|payee(?: name)?|beneficiary(?:'s)?(?: name)?|beneficiary bank|(?:reference|ref|transaction) id|transfer to|transfer type|recipient bank\/?(?:\s*e-wallet)?|e-wallet|account number|account no\.?|id type|remark|remarks|done|transferred|paid|payment successful|from|transfer amount(?: \((?:rm|myr)\))?|account type|transfer date|recipient reference|view more|view less|receipt|\+?\s*favourite)$/i;
+  /^(transaction type|merchant(?: name)?|payment details|payment method|date\s*(?:\/|&|and)\s*time|date|time|wallet ref|status|transaction no\.?|reference(?: no\.?)?|ref(?: no\.?)?|duitnow ref(?: no\.?)?|details|amount|total|recipient(?:'s)?(?: name)?|receiver(?: name)?|payee(?: name)?|beneficiary(?:'s)?(?: name)?|beneficiary bank|(?:reference|ref|transaction) id|transfer to|transfer type|recipient bank\/?(?:\s*e-wallet)?|e-wallet|account number|account no\.?|id type|remark|remarks|done|transferred|paid|payment successful|from|transfer amount(?: \((?:rm|myr)\))?|account type|transfer date|recipient reference|view more|view less|receipt|\+?\s*favourite|duitnow status code|status code|transfer method|recipient bank|recipient account|from account|money sent)$/i;
 // Values on the same screens that are never the merchant.
 // (Long digit runs are reference numbers; a line of only digits and separators is a date or time;
-// "****1234" is a masked account number.)
+// "****1234" is a masked account number; "U000" is a status code.)
 const NOT_A_MERCHANT =
-  /duitnow|ewallet|e-wallet|balance|successful|pending|failed|points|transaction|reference|fund transfer|bank\/|^account$|tngd?$|\d{6,}|^[\d\s/:.-]+$|\*{2,}/i;
+  /duitnow|ewallet|e-wallet|balance|successful|pending|failed|points|transaction|reference|fund transfer|bank\/|^account$|tngd?$|\d{6,}|^[\d\s/:.-]+$|\*{2,}|^[a-z]{1,3}\d{2,4}$/i;
 // Words that mark the screen as a transfer rather than a purchase.
-const TRANSFER = /\btransferred\b|duitnow transfer|fund transfer|instant transfer|transfer to\b|\btransfer (?:successful|completed|done|amount)\b/i;
+const TRANSFER = /\btransferred\b|duitnow transfer|fund transfer|instant transfer|money sent|transfer to\b|\btransfer (?:successful|completed|done|amount)\b/i;
 
 // Logo fragments and stray symbols read off the screen ("D", "_", "•").
 const isJunk = (line: string) => line.replace(/[^A-Za-z0-9]/g, "").length < 3;
@@ -159,7 +160,7 @@ export function timeFromText(text: string): { hour: number; minute: number } | n
   const DATE = /\b\d{1,2}[/-]\d{1,2}[/-]\d{4}\b|\b\d{4}-\d{2}-\d{2}\b|\b\d{1,2}\s+[A-Za-z]{3,9}\s+\d{4}\b/;
   for (const line of text.split(/\r?\n/)) {
     if (!DATE.test(line)) continue;
-    const m = line.match(/\b(\d{1,2}):(\d{2})(?::\d{2})?\s*([AaPp][Mm])?/);
+    const m = line.match(/\b(\d{1,2}):(\d{2})(?::\d{2}(?:\.\d+)?)?\s*([AaPp][Mm])?/); // "10:07:41.13 PM" too
     if (!m) continue;
     let hour = Number(m[1]);
     const minute = Number(m[2]);

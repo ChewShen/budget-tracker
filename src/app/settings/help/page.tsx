@@ -137,6 +137,7 @@ const TOPICS: Topic[] = [
       "See, change or forget remembered shops (or add one) in Settings → Automation → Shops it remembers.",
       "Items labelled Transfer may be money moved to your own account. That isn't spending, so dismiss them.",
       "Double-tapped by accident? Screens without an amount and receipts already sent aren't added.",
+      "Banking apps that block screenshots (e.g. Public Bank): make a Log Receipt copy of the shortcut (Settings → Automation → Apps that block screenshots), then Share the receipt → Log Receipt.",
       "Lost your phone? Revoke the token.",
     ],
     images: [

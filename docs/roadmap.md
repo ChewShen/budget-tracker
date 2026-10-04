@@ -10,7 +10,7 @@ When one is picked up, move it to `docs/changelog.md` under the version that shi
 New features are paused while the current app is made sturdier, in this order:
 1. ~~**Data safety**: weekly encrypted backups with a tested restore, and background job health in the app~~ (v0.24.0).
 2. ~~**Known rough edges**: bank-app receipt labels ("Payee Name" read as "Name", "Beneficiary Name", "Transfer Successful"), the goal-ownership gap on money set aside, the bill form's save button that can stay greyed out, and the `npm audit` warnings~~ (v0.24.1; the audit warnings are dev-only, see decisions).
-3. **Browser tests (Playwright)** in CI: add an expense, confirm an Inbox item, record balances, edit a bill.
+3. **Browser tests (Playwright)** in CI: add an expense, confirm an Inbox item, record balances, edit a bill. *On hold (2026-10-04) while the direction is worked out; pick up when asked.*
 4. **Shortcut endpoint hardening**: a rate limit per token; security headers (CSP) on the site.
 5. **Clean-up**: Recharts v3; Tailwind 4 (also clears the dev-only `braces` audit warning); check the August 2026 imported balances, then drop the `monthly_savings` backup table.
 
@@ -35,9 +35,10 @@ New features are paused while the current app is made sturdier, in this order:
 ## Faster entry
 
 - **Offline adding**: Service worker + queue so the installed app opens without signal and syncs expenses later.
+- **Tag from the transfer reference**: bank transfers often carry a reference you type (Public Bank's "Recipient Reference: breakfast"); a word that matches a tag (Breakfast) or a meal could pick the tag in the Inbox. New feature, paused with the others.
 - **Duplicate warning**: Ask before saving the same tag, amount and date twice within a minute.
 - **Tune TnG parsing** with real TnG success screens and notifications (the Inbox's "original" text shows what was read).
-- **Bank app receipts (iPhone double-tap)**: the common labels (Payee Name, Beneficiary Name, Recipient Name, Merchant Name, To:, Transfer Successful) are read since v0.24.1. Hong Leong Bank DuitNow transfers since v0.24.2 (from a real sample). One shared reader, not per-bank code: each sample becomes a test and usually a general rule. Still worth real samples from each bank app (copied from an Inbox item, names and numbers swapped for fake ones) to add to `tests/ingest.test.ts`.
+- **Bank app receipts (iPhone double-tap)**: the common labels (Payee Name, Beneficiary Name, Recipient Name, Merchant Name, To:, Transfer Successful) are read since v0.24.1. Hong Leong Bank DuitNow transfers since v0.24.2 (from a real sample). Public Bank since v0.24.3: its app blocks screenshots, so its receipt is shared to a "Log Receipt" copy of the shortcut (Share sheet) instead. One shared reader, not per-bank code: each sample becomes a test and usually a general rule. Still worth real samples from each bank app (copied from an Inbox item, names and numbers swapped for fake ones) to add to `tests/ingest.test.ts`.
 - **Android capture (later)**: the endpoint works from any device; only capturing differs. Android lets automation apps read other apps' notifications, so it can be fully automatic: MacroDroid (or Tasker) "Notification received" from TnG/bank apps → HTTP POST to `/api/ingest` with the `x-api-token` header and `{"text": title + text, "source": "android"}`. Needs: a sentence rule for the payee ("You have paid RM10.00 to NAME"; today's rules expect a label at the start of a line), sample notification texts per app, an Android section in Settings → Automation, the guide and Help. Banks that hide details in notifications ("You have a new transaction") can't be captured this way. Only worth doing once someone using the app has an Android phone.
 - **Bank statement CSV import**: Match against logged expenses and suggest anything missing.
 - **Rename from the bill form**: A "Rename" field in Settings → Monthly bills that renames the underlying tag.
@@ -56,4 +57,21 @@ New features are paused while the current app is made sturdier, in this order:
 ## Later, bigger
 
 - **Local-first native app** (discussed, not started): an Expo (React Native) app with the data in SQLite on the phone, so nothing is readable by whoever runs the server, it works offline, and reminders become on-device notifications (no VAPID, cron or service-role key). The pure logic in `src/lib/` carries over as is; the screens and the data layer would be rewritten. Optional end-to-end encrypted sync later for multiple devices (PowerSync / ElectricSQL or encrypted backups). First step whenever it's picked up: put the data layer behind an interface (load, save expense, save balances…) with Supabase and local storage as two implementations. **Capturing payments natively:** on Android the app itself could read TnG and bank notifications (a notification listener the user allows under Notification access; needs a native module in an Expo dev build, Play Store review of the permission, or "Allow restricted settings" when installed outside the Play Store), so no MacroDroid and no server needed for capture. On iPhone a native app gains nothing here: iOS never lets apps read other apps' notifications, so Shortcuts (double-tap, Apple Pay automation) or a Share-sheet extension ("share screenshot to the app", read on the phone) stay the way in.
+- **Local-first as a PWA instead of native** (discussed 2026-10-04): possible. The app's local mode already keeps everything in the browser (localStorage, ~5 MB); a real local-first PWA would move it to IndexedDB (or SQLite via WebAssembly) and cache the app for offline use. What works: all entry and analytics offline, nothing leaves the phone, Shortcuts by opening the app with the payment in the link (`/inbox?add=…`, the app pops open). What's lost: nightly reminders (iPhone web apps can't schedule their own notifications; Web Push needs a server), auto-add while the app is closed (runs on next open), automatic backups and multi-device sync (manual export only), and data is tied to the installed icon (removing it removes the data; iOS may clear unused website data, though installed apps are generally kept and can request persistent storage).
+
+  | | Local PWA | Native (Expo + SQLite) |
+  |---|---|---|
+  | Data on the phone | yes | yes |
+  | Offline | yes (with caching) | yes |
+  | Reminders without a server | no | yes |
+  | Shortcut capture | opens the app | silent (App Intents) |
+  | Read TnG/bank notifications | no | Android only |
+  | Storage durability | good when installed | best |
+  | Effort | small: reuse this app | large: new screens, App Store |
+
+  Choose the PWA route for privacy and offline with little work; native when on-device reminders, silent capture or Android notification reading matter.
+
+  **Automation in a local-only PWA:** the server can't write into the phone's browser storage. Options: the Shortcut opens the app with the payment in the link (works on Android; on iPhone links from Shortcuts open in Safari, whose storage is separate from the home-screen app, so unreliable); a server "drop box" that holds captures until the app collects and deletes them (keeps the quiet double-tap, still needs the server and token); or copy-and-paste (fully local, manual). Only a native app gets fully local *and* quiet capture on iPhone (App Intents).
+
+  **Cost (decided 2026-10-04: stay on PWA + Supabase):** the current setup costs USD 0 (Supabase, Vercel and GitHub free plans) and is the only one with everything working on iPhone. Native on Android is cheap (sideloading an APK is free; Play Store is a one-time USD 25; Expo's free plan builds it). Native on iPhone needs the Apple Developer Program (USD 99/year); a free Apple ID's own builds stop opening after 7 days. If Android capture is ever wanted, a small Android-only companion that captures notifications and posts to `/api/ingest` is the affordable route, not a full rewrite.
 - **Optional end-to-end encryption** for accounts that want privacy from the database owner, accepting that server features (nightly reminders, auto-add) wouldn't work for them.

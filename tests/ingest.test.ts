@@ -190,6 +190,44 @@ Done`;
     expect(referenceFromText(text)).toContain("20261004HLBBMYKL0101234");
   });
 
+  // Public Bank's shared receipt image (PB blocks screenshots, so it's shared to the Shortcut instead).
+  // "Money Sent", the payee under "Recipient Account", a status code and the reference you typed.
+  const PB_RECEIPT = `Money Sent
+RM 1.00
+Reference No.
+331704
+Date & Time
+04/10/2026 10:07:41.13 PM
+DuitNow Ref No.
+20261004PBBEMYKL010OR
+M1234567
+DuitNow Status Code
+U000
+Transfer Method
+DuitNow Transfer
+Recipient Reference
+breakfast
+Recipient Bank
+Touch n Go eWallet
+Recipient Account
+ALI BIN ABU
+From Account
+****1234
+BANK FOR THE PEOPLE
+PUBLIC BANK
+PUBLIC ISLAMIC BANK
+Public Bank Berhad 196501000672 (6463-H)
+Public Islamic Bank Berhad 197301001433 (14328-V)`;
+
+  it("reads a Public Bank receipt", () => {
+    expect(parseCapture({ text: PB_RECEIPT }, "2026-10-04")).toEqual({ amount: 1, merchant: "ALI BIN ABU", date: "2026-10-04", isTransfer: true });
+    expect(timeFromText(PB_RECEIPT)).toEqual({ hour: 22, minute: 7 }); // fractions of a second don't hide the PM
+  });
+
+  it("doesn't take a status code or the reference you typed for the payee", () => {
+    expect(merchantFromText("Recipient Account\nDuitNow Status Code\nU000\nALI BIN ABU")).toBe("ALI BIN ABU");
+  });
+
   it("doesn't read RM inside a reference number as an amount", () => {
     expect(amountFromText("Reference No.\n20261004HLBBMYKL010\nORM21103782\nRM 10.00")).toBe(10);
     expect(amountFromText("RM21103782")).toBeNull();

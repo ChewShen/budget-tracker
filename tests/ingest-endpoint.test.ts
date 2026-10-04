@@ -263,6 +263,14 @@ describe("accidental double-taps", () => {
     expect(tables.inbox_items ?? []).toHaveLength(0);
   });
 
+  it("says when a screen was blank (an app that blocks screenshots)", async () => {
+    const res = await send({ text: " \n9:41\n" });
+    expect(res).toMatchObject({ status: 200, skipped: true });
+    expect(res.message).toContain("Not added: nothing readable on this screen");
+    expect(res.message).toContain("share its receipt to Log Receipt");
+    expect((await send({ text: "" })).message).toContain("nothing readable"); // a black screenshot reads as nothing
+  });
+
   it("skips the same receipt sent again, saying whether it's still waiting", async () => {
     await send({ text: RECEIPT });
     const again = await send({ text: RECEIPT });

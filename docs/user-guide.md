@@ -206,7 +206,11 @@ Open a TnG receipt (TnG app → **Activity** → any payment) and double-tap the
 
 <img src="../public/help/notification.png" alt="Notification: RM 10.00 · Asian Food and Dessert, Added to Inbox" width="320">
 
-It works on the success screen right after you pay, and on receipts opened later from your history (the receipt's own date and time are used). It also works on banking apps' success screens (labels like *Payee Name*, *Beneficiary Name* and *Transfer Successful* are understood); if a bank's layout isn't read well, the item still arrives and you fill in what's missing.
+It works on the success screen right after you pay, and on receipts opened later from your history (the receipt's own date and time are used).
+
+It also works on banking apps' success screens (labels like *Payee Name*, *Beneficiary Name* and *Transfer Successful* are understood); if a bank's layout isn't read well, the item still arrives and you fill in what's missing.
+
+**Banking apps that block screenshots** (e.g. Public Bank) give a black screenshot, so the double-tap reads nothing ("Not added: nothing readable on this screen"). Share their receipt instead: make a **Log Receipt** copy of the shortcut once (Settings → Automation → *Apps that block screenshots* has the 4 steps), then in the bank app tap **Share** on the receipt → **Log Receipt**.
 
 ### Confirm in the Inbox
 
@@ -236,6 +240,7 @@ Check them, then **Add**, or **×** if it isn't an expense. **Add all ready** co
 | **RM 10.00 · Shop** / Added to Inbox | Ready to confirm in the Inbox |
 | … / **Added to Inbox: fill in the amount** | A receipt, but the amount couldn't be read (often hidden by the Back Tap banner). Fill it in in the Inbox |
 | **Not added: no amount found on this screen** | You double-tapped on something that isn't a receipt; nothing was added |
+| **Not added: nothing readable on this screen…** | The screenshot was blank, usually a banking app that blocks screenshots. Share its receipt to **Log Receipt** instead |
 | **Not added: already in your Inbox** / **already handled** | The same receipt was sent before |
 | **Not added: This token (bt_…) was revoked** | The shortcut still has an old token. Paste your current one into its first box. If you have two copies of Log Payment, check Back Tap points at the right one |
 | **Not added: Token not recognised…** | The token is mistyped or cut short (it says how many characters it got; a token has 46). Copy it again from Settings → Automation |
