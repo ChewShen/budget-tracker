@@ -226,6 +226,48 @@ export default function AutomationSettingsPage() {
         </section>
       )}
 
+      <section className="card p-5 sm:p-6">
+        <details className="group">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 [&::-webkit-details-marker]:hidden">
+            <span>
+              <span className="block text-[15px] font-semibold">Apps that block screenshots</span>
+              <span className="block text-xs text-muted-foreground">
+                e.g. Public Bank: share the receipt to a “Log Receipt” shortcut instead
+              </span>
+            </span>
+            <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground transition group-open:rotate-180" />
+          </summary>
+          <p className="mt-4 text-sm text-muted-foreground">
+            Some banking apps turn screenshots black, so a double-tap reads nothing (“Not added: nothing readable on
+            this screen”). Their receipts can usually be shared as an image instead. Make a copy of Log Payment that
+            takes a shared image, once:
+          </p>
+          <ol className="mt-3 list-decimal space-y-2.5 pl-5 text-sm text-muted-foreground marker:text-foreground">
+            <li>
+              In <strong className="text-foreground">Shortcuts</strong>, press and hold{" "}
+              <strong className="text-foreground">Log Payment</strong> → <Code>Duplicate</Code>. Rename the copy{" "}
+              <Code>Log Receipt</Code>.
+            </li>
+            <li>
+              Open it, tap <Code>ⓘ</Code> at the bottom and turn on{" "}
+              <strong className="text-foreground">Show in Share Sheet</strong>.
+            </li>
+            <li>
+              Delete the <Code>Take Screenshot</Code> action.
+            </li>
+            <li>
+              In <Code>Extract Text from Screenshot</Code>, tap the blue <strong className="text-foreground">Screenshot</strong>{" "}
+              and choose <strong className="text-foreground">Shortcut Input</strong>.
+            </li>
+          </ol>
+          <p className="mt-3 text-sm text-muted-foreground">
+            Then, after paying: in the bank app tap <strong className="text-foreground">Share</strong> on the receipt →{" "}
+            <strong className="text-foreground">Log Receipt</strong>. You get the same notification, and it lands in the Inbox.
+            If the bank shares a PDF rather than an image, use <Code>Get Text from PDF</Code> instead of Extract Text.
+          </p>
+        </details>
+      </section>
+
       <MerchantRulesManager />
 
       <section className="card p-5 sm:p-6">

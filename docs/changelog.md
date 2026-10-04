@@ -15,6 +15,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.24.3] - 2026-10-04
+
+### Added
+- **Banking apps that block screenshots** (e.g. Public Bank): a black screenshot now says "Not added: nothing readable on this screen…" instead of "no amount found", and Settings → Automation → *Apps that block screenshots* (also in the guide and Help) shows how to make **Log Receipt**, a copy of the shortcut you share a receipt to from the bank app.
+
+### Fixed
+- **Public Bank receipts** are read: the payee under "Recipient Account", "Money Sent" as a transfer, and a time with fractions of a second ("10:07:41.13 PM") keeps its PM. A status code like "U000" is never taken as the payee.
+
+---
+
 ## [0.24.2] - 2026-10-04
 
 ### Fixed
