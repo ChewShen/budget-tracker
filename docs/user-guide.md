@@ -206,7 +206,7 @@ Open a TnG receipt (TnG app → **Activity** → any payment) and double-tap the
 
 <img src="../public/help/notification.png" alt="Notification: RM 10.00 · Asian Food and Dessert, Added to Inbox" width="320">
 
-It works on the success screen right after you pay, and on receipts opened later from your history (the receipt's own date and time are used).
+It works on the success screen right after you pay, and on receipts opened later from your history (the receipt's own date and time are used). It also works on banking apps' success screens (labels like *Payee Name*, *Beneficiary Name* and *Transfer Successful* are understood); if a bank's layout isn't read well, the item still arrives and you fill in what's missing.
 
 ### Confirm in the Inbox
 
