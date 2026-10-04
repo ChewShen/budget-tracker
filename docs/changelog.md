@@ -15,6 +15,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.24.1] - 2026-10-04
+
+### Fixed
+- **Banking apps' receipts**: "Payee Name" is no longer read as the payee "Name", "Beneficiary Name" is understood (also when the labels come before the values), and "Transfer Successful" is marked as a transfer.
+- **Money set aside** can only be for one of your own goals, like every other link between your data (migration `2026-10-04_goal_contributions_owner.sql`).
+- **Monthly bills**: Save no longer stays greyed out after trying to save an instalment plan with missing details.
+
+### Changed
+- Dependencies reviewed: nothing that ships to the app has a known vulnerability; the remaining `npm audit` warning is in build tools only (see `docs/decisions.md`).
+
+---
+
 ## [0.24.0] - 2026-10-04
 
 ### Added
