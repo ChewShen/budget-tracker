@@ -9,10 +9,10 @@ When one is picked up, move it to `docs/changelog.md` under the version that shi
 
 New features are paused while the current app is made sturdier, in this order:
 1. ~~**Data safety**: weekly encrypted backups with a tested restore, and background job health in the app~~ (v0.24.0).
-2. **Known rough edges**: bank-app receipt labels ("Payee Name" read as "Name", "Beneficiary Name", "Transfer Successful"), the goal-ownership gap on money set aside, the bill form's save button that can stay greyed out, and the `npm audit` warnings.
+2. ~~**Known rough edges**: bank-app receipt labels ("Payee Name" read as "Name", "Beneficiary Name", "Transfer Successful"), the goal-ownership gap on money set aside, the bill form's save button that can stay greyed out, and the `npm audit` warnings~~ (v0.24.1; the audit warnings are dev-only, see decisions).
 3. **Browser tests (Playwright)** in CI: add an expense, confirm an Inbox item, record balances, edit a bill.
 4. **Shortcut endpoint hardening**: a rate limit per token; security headers (CSP) on the site.
-5. **Clean-up**: Recharts v3; check the August 2026 imported balances, then drop the `monthly_savings` backup table.
+5. **Clean-up**: Recharts v3; Tailwind 4 (also clears the dev-only `braces` audit warning); check the August 2026 imported balances, then drop the `monthly_savings` backup table.
 
 ## Paused new features (agreed order; tests shipped in v0.22.0, shops it remembers in v0.23.0)
 
