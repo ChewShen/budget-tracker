@@ -253,6 +253,7 @@ One-off SQL changes for existing databases live in [`scripts/migrations/`](scrip
 - `2026-10-03_inbox.sql`: `api_tokens` (hashed personal tokens), `inbox_items` (captured expenses to confirm) and `merchant_rules` (merchant → tag), owner-only, for Settings → Automation and the Inbox. The endpoint `/api/ingest` needs `SUPABASE_SERVICE_ROLE_KEY` (same as reminders).
 - `2026-10-03_inbox_reference.sql`: a `reference` on Inbox items (a receipt's reference numbers), so the same receipt sent twice is only added once.
 - `2026-10-04_job_runs.sql`: `job_runs`, a log of background jobs (nightly reminders, the nightly bill auto-add, weekly backups, Shortcut errors) shown in Settings → Account, with a warning on Overview when one fails or stops running. The auto-add job now logs each run. Its last query runs the auto-add once (adding any bill due today, as tonight's run would).
+- `2026-10-04_goal_contributions_owner.sql`: money set aside for a goal must be for one of your own goals (the same check every other reference has). Its last query should show 0.
 - `2026-10-04_merchant_rule_categories.sql`: merchant rules remember a category, with the tag optional ("TEALIVE → Food", the meal still by payment time), for Settings → Automation → Shops it remembers. Existing rules keep their tag and get its category.
 
 ### Adding a friend

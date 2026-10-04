@@ -44,8 +44,7 @@ New features are paused while the current app is made sturdier, in this order:
 
 ## Robustness
 
-- See "Now: strengthen what's there" at the top for the agreed list (browser tests, the goal-ownership gap, Recharts v3, …).
-- **Goal ownership on money set aside** (detail): `goal_contributions` checks the owner but not that the goal is yours (the other "points at" checks do). Harmless in practice (another person's goal id is a random UUID you'd never see, and they don't see your rows), but worth a one-line policy for consistency, plus a test case.
+- See "Now: strengthen what's there" at the top for the agreed list (browser tests, Recharts v3, …).
 
 ## Data housekeeping
 
