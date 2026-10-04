@@ -114,7 +114,13 @@ export async function POST(request: NextRequest) {
   // Accidental double-taps: no amount and nothing that looks like a receipt (no payee, no reference)
   // means it wasn't a payment screen. A receipt whose amount was hidden (e.g. under a banner) is still
   // added, with the amount left for you to fill in.
-  if (!captured.amount && !reference && !captured.merchant) return skip("no amount found on this screen.");
+  if (!captured.amount && !reference && !captured.merchant) {
+    // Hardly any text: a black screenshot (some banking apps block them), not just a non-receipt.
+    const readable = rawText.replace(/[^A-Za-z0-9]/g, "").length;
+    if (typeof input.text === "string" && readable < 12) // sent screen text, but (almost) none was read
+      return skip("nothing readable on this screen. If this app blocks screenshots (some banking apps do), share its receipt to Log Receipt instead.");
+    return skip("no amount found on this screen.");
+  }
   if (reference) {
     const { data: same, error: refError } = await db
       .from("inbox_items")
