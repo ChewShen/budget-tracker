@@ -15,6 +15,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.24.4] - 2026-10-05
+
+### Added
+- **Inbox: the name is editable.** It's filled with the shop as read, or empty ("Shop or note (optional)") when none was found; what you type is saved as the expense's note.
+- **Activity: + on each day** adds an expense on that date.
+
+### Changed
+- **Clearer "Remember" choices:** "Always food, meal by time" or "Always Food · Coffee" (or "Always Shopping, I pick the tag"), defaulting to what you picked: a meal tag keeps the meal following the time, another tag (e.g. Coffee) is kept as is.
+
+### Fixed
+- **ZUS app receipts** get the shop name from "ZUS Wallet Balance" when nothing else names it, and the small raised "RM" read on its own line no longer loses the amount.
+
+---
+
 ## [0.24.3] - 2026-10-04
 
 ### Added
