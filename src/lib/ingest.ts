@@ -56,8 +56,10 @@ export function amountFromText(text: string): number | null {
   // above "10.00"). Take a plain number with cents right under such a label.
   for (let i = 1; i < lines.length; i++) {
     const plain = lines[i].trim().match(/^(\d{1,3}(?:,\d{3})+|\d+)\.(\d{2})$/);
-    if (plain && PAID.test(lines[i - 1]) && /\b(?:RM|MYR)\b/i.test(lines[i - 1]) && !NOT_THE_AMOUNT.test(lines[i - 1]))
-      return toNumber(plain[1], plain[2]);
+    const above = lines[i - 1];
+    const currencyLabel = PAID.test(above) && /\b(?:RM|MYR)\b/i.test(above) && !NOT_THE_AMOUNT.test(above);
+    // …or a small raised "RM" read as its own line ("RM" / "1.10").
+    if (plain && (currencyLabel || /^\s*(?:RM|MYR)\s*$/i.test(above))) return toNumber(plain[1], plain[2]);
   }
   return null;
 }
@@ -120,8 +122,17 @@ export function merchantFromText(text: string): string | null {
     const found = lines.slice(i + 1).find(usable);
     if (found) return found.slice(0, 80);
   }
+
+  // 3. A shop's own app paid from its own wallet ("Payment Method: ZUS Wallet Balance") names the
+  //    shop. Not general e-wallets (TnG, GrabPay…), which are how you paid, not where.
+  for (const line of lines) {
+    const m = line.match(/^([A-Za-z][A-Za-z0-9&' ]{1,30}?)\s+wallet(?:\s+balance)?$/i);
+    if (m && !SHARED_WALLET.test(m[1])) return m[1].trim().slice(0, 80);
+  }
   return null;
 }
+
+const SHARED_WALLET = /^(?:tng|tng e|touch ?n ?go|touch 'n go|grab ?pay|grab|boost|shopee ?pay|shopee|big ?pay|mae|e|my|duitnow)$/i;
 
 const DATE_FORMATS = ["dd/MM/yyyy", "d/M/yyyy", "dd-MM-yyyy", "d MMM yyyy", "dd MMM yyyy", "d MMMM yyyy", "MMM d, yyyy"];
 
