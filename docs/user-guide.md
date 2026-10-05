@@ -223,12 +223,13 @@ Check them, then **Add**, or **×** if it isn't an expense. **Add all ready** co
 
 <img src="../public/help/inbox.png" alt="An Inbox item: amount, date, category and tag filled in" width="320">
 
-- **It remembers your shops when you ask it to.** Tick **Remember "SHOP" as** (it starts unticked) and choose:
-  - **Food (meal by time)**: the shop is always Food, and the meal still follows when you paid (a mamak at 8am is Breakfast, at 9pm Dinner). This is the default for food.
-  - **Category · tag**, e.g. **Transport · Grab**: always that tag.
-  - **Another category on its own**, e.g. **Shopping (any tag)**: filed under Shopping, and you pick the tag.
+- **The name is yours to change.** It's filled with the shop as read (or empty, with *Shop or note (optional)*, when none was found). Type a shop or a note, or leave it blank; it's saved as the expense's note and shows in Activity and search.
+- **It remembers your shops when you ask it to.** Tick **Remember "SHOP"** (it starts unticked) and choose:
+  - **Always food, meal by time**: the shop is always food, and the meal follows when you paid (a mamak at 8am is Breakfast, at 9pm Dinner). Unlike the time-of-day guess for shops it doesn't know, these count for **Add all ready**. This is the default when the tag is a meal.
+  - **Always Food · Coffee** (the category and tag you picked): always that tag, whatever the time. The default when you picked a tag that isn't a meal, e.g. Coffee for a coffee shop, or **Always Transport · Grab**.
+  - **Always Shopping, I pick the tag** (another category on its own): filed under Shopping, and you pick the tag.
 
-  Next time, that shop's payments arrive already sorted. To see, change or forget what it remembers, or add a shop before you've paid there, go to **Settings → Automation → Shops it remembers**. A shop matches when its name contains those words ("GRAB" matches "GRAB* A-1234 KL").
+  Remember only appears when a shop name was read off the receipt, because that's what it matches next time. Next time, that shop's payments arrive already sorted. To see, change or forget what it remembers, or add a shop before you've paid there, go to **Settings → Automation → Shops it remembers**. A shop matches when its name contains those words ("GRAB" matches "GRAB* A-1234 KL").
 - **Transfers** (e.g. a DuitNow Transfer to your own bank) are labelled *Transfer*. Moving money between your own accounts isn't spending, so dismiss those.
 - **Already have it?** If an item matches an expense you already have that day, it says so, so you can dismiss it.
 - **original** shows exactly what was read from the screen, with a **Copy** button.
@@ -258,7 +259,7 @@ A token can only **add** items to *your* Inbox; it can't read anything. If you l
 
 ## 12. Transactions, export and backup
 
-**Activity** (Transactions) lists every expense grouped by day, newest first, 50 at a time (**Show 50 more**). Search by tag or note, filter by category, or switch between this month and all months. Day totals always include the whole day.
+**Activity** (Transactions) lists every expense grouped by day, newest first, 50 at a time (**Show 50 more**). Search by tag or note, filter by category, or switch between this month and all months. Day totals always include the whole day. Tap an expense to change or delete it; tap **+** on a day to add an expense on that date.
 
 **Export** (Overview, top right):
 - **This month** or **All expenses** as a CSV that opens in Excel or Google Sheets.

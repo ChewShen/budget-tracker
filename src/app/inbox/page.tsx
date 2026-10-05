@@ -38,6 +38,7 @@ function reread(item: InboxItem): ReadItem {
 }
 
 interface Draft {
+  name: string; // what the expense is saved with as its note: the shop as read, or what you type
   amount: string;
   date: string;
   categoryId: string;
@@ -47,7 +48,7 @@ interface Draft {
   from: InboxDefault["from"] | "you";
   note: string | null;
   remember: boolean;
-  rememberAs: "category" | "tag"; // the category alone (meal by time for Food), or category + tag
+  rememberAs: "category" | "tag"; // always this category (meal by time for Food), or always category + tag
 }
 
 const isMoney = (t: string) => /^\d*\.?\d{0,2}$/.test(t);
@@ -78,7 +79,12 @@ function InboxRow({
   const category = categories.find((c) => c.id === draft.categoryId);
   const tag = tags.find((t) => t.id === draft.tagId);
   const isFood = Boolean(category) && foodCategory(categories)?.id === category?.id;
-  const anyTag = isFood ? "meal by time" : "any tag";
+  // What remembering does, in plain words: "Always food, meal by time" / "Always Food · Coffee".
+  const alwaysCategory = isFood ? "Always food, meal by time" : `Always ${categoryLabel(category?.name)}, I pick the tag`;
+  const alwaysTag = tag ? `Always ${categoryLabel(category?.name)} · ${tag.name}` : null;
+  // Food with a meal tag defaults to "meal by time"; a non-meal tag you picked (Coffee) to that tag.
+  const defaultRememberAs: Draft["rememberAs"] =
+    categoryOnly && (!tag || (isFood && Boolean(tag.role))) ? "category" : "tag";
   // Already remembered exactly like this? Then there's nothing to tick.
   const ruleMatches =
     rule && rule.category_id === draft.categoryId && (rule.tag_id ? rule.tag_id === draft.tagId : draft.from === "rule-meal" || !draft.tagId);
@@ -89,9 +95,16 @@ function InboxRow({
   return (
     <li className="card p-4 sm:p-5">
       <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5">
-            <span className="truncate text-sm font-semibold">{item.merchant || "Unknown merchant"}</span>
+            <input
+              value={draft.name}
+              onChange={(e) => onChange({ name: e.target.value })}
+              maxLength={80}
+              placeholder="Shop or note (optional)"
+              aria-label="Shop or note"
+              className="min-w-0 flex-1 truncate rounded-md border border-transparent bg-transparent px-1 py-0.5 -ml-1 text-sm font-semibold outline-none transition placeholder:font-normal placeholder:text-muted-foreground hover:border-border focus:border-border focus:bg-background"
+            />
             {item.isTransfer && (
               <span className="shrink-0 rounded-full border px-1.5 py-px text-[10px] font-medium text-muted-foreground">
                 Transfer
@@ -113,7 +126,7 @@ function InboxRow({
         <button
           onClick={onDismiss}
           className="-mr-1.5 -mt-1 shrink-0 rounded-full p-2 text-muted-foreground transition hover:bg-secondary hover:text-foreground"
-          aria-label={`Dismiss ${item.merchant || "item"}`}
+          aria-label={`Dismiss ${draft.name || "item"}`}
           title="Dismiss (not an expense)"
         >
           <X className="h-4 w-4" />
@@ -127,9 +140,10 @@ function InboxRow({
       )}
       {(draft.from === "rule" || draft.from === "rule-meal") && rule && category && (
         <p className="mt-2 text-xs text-muted-foreground">
-          Remembered: “{rule.pattern}” is {categoryLabel(category.name)}
-          {rule.tag_id && tag ? ` · ${tag.name}` : ""}.
-          {draft.from === "rule-meal" && tag && ` ${tag.name}: ${draft.note}.`}
+          Remembered: “{rule.pattern}” is always{" "}
+          {draft.from === "rule-meal" && tag
+            ? `food; ${tag.name} from the ${draft.note?.replace(/^meal from the /, "")}.`
+            : `${categoryLabel(category.name)}${rule.tag_id && tag ? ` · ${tag.name}` : ""}.`}
           {!draft.tagId && " Pick a tag."}
         </p>
       )}
@@ -237,12 +251,10 @@ function InboxRow({
                 type="checkbox"
                 checked={draft.remember}
                 // Food shops default to the category alone, so the meal keeps following the time.
-                onChange={(e) =>
-                  onChange({ remember: e.target.checked, rememberAs: categoryOnly && (isFood || !tag) ? "category" : "tag" })
-                }
+                onChange={(e) => onChange({ remember: e.target.checked, rememberAs: defaultRememberAs })}
                 className="h-4 w-4 accent-[hsl(var(--primary))]"
               />
-              {rule ? "Update" : "Remember"} “{key}” as
+              {rule ? "Update" : "Remember"} “{key}”
             </label>
             {draft.remember && (
               <select
@@ -251,16 +263,8 @@ function InboxRow({
                 className="field w-auto py-1 text-xs"
                 aria-label="Remember as"
               >
-                {categoryOnly && (
-                  <option value="category">
-                    {categoryLabel(category.name)} ({anyTag})
-                  </option>
-                )}
-                {tag && (
-                  <option value="tag">
-                    {categoryLabel(category.name)} · {tag.name}
-                  </option>
-                )}
+                {categoryOnly && <option value="category">{alwaysCategory}</option>}
+                {alwaysTag && <option value="tag">{alwaysTag}</option>}
               </select>
             )}
           </div>
@@ -310,6 +314,7 @@ export default function InboxPage() {
           tags,
         });
         next[i.id] = {
+          name: i.merchant ?? "",
           amount: i.amount ? String(i.amount) : "",
           date: i.occurred_on ?? format(new Date(), "yyyy-MM-dd"),
           categoryId: pick.categoryId,
@@ -344,10 +349,10 @@ export default function InboxPage() {
       date: d.date,
       category_id: d.categoryId,
       tag_id: d.tagId,
-      description: item.merchant ?? undefined,
+      description: d.name.trim() || undefined,
       is_one_off: false,
     });
-    if (!quiet) showToast({ tone: "default", message: `Added ${formatCurrency(amount)}${item.merchant ? ` · ${item.merchant}` : ""}` });
+    if (!quiet) showToast({ tone: "default", message: `Added ${formatCurrency(amount)}${d.name.trim() ? ` · ${d.name.trim()}` : ""}` });
     return true;
   };
 

@@ -228,6 +228,22 @@ Public Islamic Bank Berhad 197301001433 (14328-V)`;
     expect(merchantFromText("Recipient Account\nDuitNow Status Code\nU000\nALI BIN ABU")).toBe("ALI BIN ABU");
   });
 
+  // A ZUS Coffee app receipt: no merchant line, only "Payment Method: ZUS Wallet Balance"; the small
+  // raised "RM" may be read on its own line above the amount.
+  it.each([
+    ["RM beside the amount", "Transaction Details\nPayment\nRM 1.10\nDate and Time\n5 October 2026 08:28\nOrder ID:\n26100509365\nPayment Method\nZUS Wallet Balance\nStatus:\nPaid\nReport An Issue"],
+    ["RM on its own line", "Transaction Details\nPayment\nRM\n1.10\nDate and Time\nOrder ID:\nPayment Method\nStatus:\n5 October 2026 08:28\n26100509365\nZUS Wallet Balance\nPaid\nReport An Issue"],
+  ])("reads a ZUS app receipt, %s", (_case, text) => {
+    expect(parseCapture({ text }, "2026-10-05")).toEqual({ amount: 1.1, merchant: "ZUS", date: "2026-10-05", isTransfer: false });
+    expect(timeFromText(text)).toEqual({ hour: 8, minute: 28 });
+    expect(referenceFromText(text)).toBe("26100509365");
+  });
+
+  it("names the shop from its own wallet only when nothing else does", () => {
+    expect(merchantFromText("Merchant\nKEDAI CONTOH\nPayment Method\nZUS Wallet Balance")).toBe("KEDAI CONTOH");
+    expect(merchantFromText("Payment Method\nTNG eWallet Balance")).toBeNull(); // the TnG wallet isn't a shop
+  });
+
   it("doesn't read RM inside a reference number as an amount", () => {
     expect(amountFromText("Reference No.\n20261004HLBBMYKL010\nORM21103782\nRM 10.00")).toBe(10);
     expect(amountFromText("RM21103782")).toBeNull();
