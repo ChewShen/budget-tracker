@@ -23,6 +23,8 @@ interface QuickAddModalProps {
   transactions: Transaction[];
   // When set, the sheet edits this entry instead of adding a new one.
   editing: Transaction | null;
+  // When adding: start on this date (Activity's "+" on a day) instead of the usual default.
+  startDate?: string | null;
   onSave: (transaction: NewTransaction) => Promise<void>;
   onUpdate: (id: string, transaction: NewTransaction) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
@@ -42,6 +44,7 @@ export function QuickAddModal({
   tags,
   transactions,
   editing,
+  startDate,
   onSave,
   onUpdate,
   onDelete,
@@ -96,6 +99,7 @@ export function QuickAddModal({
     setIsOneOff(false);
     const today = format(new Date(), "yyyy-MM-dd");
     setSelectedDate(
+      startDate ??
       defaultEntryDate({
         mode: getDefaultDateMode(),
         today,
@@ -121,7 +125,7 @@ export function QuickAddModal({
     }
     // Only when the sheet opens; not when data changes while it is open.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, editing]);
+  }, [isOpen, editing, startDate]);
 
   const applyRecent = (tx: Transaction) => {
     setSelectedCategoryId(tx.category_id);
