@@ -10,9 +10,10 @@ import { ToastHost } from "@/components/toast";
 import { GuestBanner } from "@/components/guest-banner";
 import { Transaction } from "@/lib/types";
 
-// Lets any page open the Add expense sheet, or open it pre-filled to edit an entry.
-const QuickAddContext = createContext<{ openEdit: (tx: Transaction) => void }>({
+// Lets any page open the Add expense sheet: pre-filled to edit an entry, or new on a given date.
+const QuickAddContext = createContext<{ openEdit: (tx: Transaction) => void; openAddOn: (date: string) => void }>({
   openEdit: () => {},
+  openAddOn: () => {},
 });
 
 export const useQuickAdd = () => useContext(QuickAddContext);
@@ -20,6 +21,7 @@ export const useQuickAdd = () => useContext(QuickAddContext);
 function ShellInner({ children }: { children: React.ReactNode }) {
   const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
   const [editing, setEditing] = useState<Transaction | null>(null);
+  const [startDate, setStartDate] = useState<string | null>(null); // a day picked in Activity
   const {
     categories,
     tags,
@@ -37,6 +39,15 @@ function ShellInner({ children }: { children: React.ReactNode }) {
     // A leftover toast would sit on top of the sheet's numpad.
     dismissToast();
     setEditing(null);
+    setStartDate(null);
+    setIsQuickAddOpen(true);
+  };
+
+  // Activity's "+" on a day: a new expense on that date.
+  const openAddOn = (date: string) => {
+    dismissToast();
+    setEditing(null);
+    setStartDate(date);
     setIsQuickAddOpen(true);
   };
 
@@ -48,6 +59,7 @@ function ShellInner({ children }: { children: React.ReactNode }) {
     url.searchParams.delete("add");
     window.history.replaceState(null, "", url.pathname + url.search);
     setEditing(null);
+    setStartDate(null);
     setIsQuickAddOpen(true);
   }, [isLoaded]);
 
@@ -58,7 +70,7 @@ function ShellInner({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <QuickAddContext.Provider value={{ openEdit }}>
+    <QuickAddContext.Provider value={{ openEdit, openAddOn }}>
       <div className="min-h-screen bg-background text-foreground pb-[calc(7rem+env(safe-area-inset-bottom))] md:pb-12 flex flex-col">
         <Navbar onOpenQuickAdd={openQuickAdd} />
         {mode === "guest" && <GuestBanner />}
@@ -96,6 +108,7 @@ function ShellInner({ children }: { children: React.ReactNode }) {
           tags={tags}
           transactions={transactions}
           editing={editing}
+          startDate={startDate}
           onSave={addTransaction}
           onUpdate={updateTransaction}
           onDelete={deleteTransaction}

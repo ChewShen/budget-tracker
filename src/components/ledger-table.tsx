@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { format, parseISO } from "date-fns";
-import { Search, Trash2 } from "lucide-react";
+import { Plus, Search, Trash2 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import { CategoryIcon, categoryLabel } from "@/lib/categories";
 import { Transaction } from "@/lib/types";
@@ -25,7 +25,7 @@ export function LedgerTable({
   showFilters = true,
   pageSize = 50,
 }: LedgerTableProps) {
-  const { openEdit } = useQuickAdd();
+  const { openEdit, openAddOn } = useQuickAdd();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("ALL");
   // Drawing thousands of rows is what slows a phone down, so only the newest few are drawn
@@ -108,9 +108,20 @@ export function LedgerTable({
               const dayTotal = dayTotals.get(date) || 0;
               return (
                 <div key={date}>
-                  <div className="flex items-center justify-between bg-secondary/40 px-4 py-2 text-xs text-muted-foreground sm:px-5">
+                  <div className="flex items-center justify-between gap-2 bg-secondary/40 py-1 pl-4 pr-2 text-xs text-muted-foreground sm:pl-5 sm:pr-3">
                     <span className="font-medium">{formatDayHeading(date)}</span>
-                    <span className="tabular-nums">{formatCurrency(dayTotal)}</span>
+                    <span className="flex items-center gap-1">
+                      <span className="tabular-nums">{formatCurrency(dayTotal)}</span>
+                      <button
+                        type="button"
+                        onClick={() => openAddOn(date)}
+                        className="rounded-full p-1.5 text-muted-foreground transition hover:bg-secondary hover:text-foreground"
+                        aria-label={`Add an expense on ${formatDayHeading(date)}`}
+                        title="Add an expense on this day"
+                      >
+                        <Plus className="h-3.5 w-3.5" />
+                      </button>
+                    </span>
                   </div>
                   <ul>
                     {txs.map((tx) => (

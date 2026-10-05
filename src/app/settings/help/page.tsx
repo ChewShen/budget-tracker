@@ -133,7 +133,8 @@ const TOPICS: Topic[] = [
       "3. iPhone Settings → Accessibility → Touch → Back Tap → Double Tap → Log Payment, and turn Show Banner off.",
       "Try it: open a TnG receipt and double-tap the back of your phone. Then confirm it in the Inbox.",
       "New items default to Food and the meal for the time you paid (marked as a guess). Shops you've taught it get their own tag.",
-      "Tick \"Remember … as\" (it starts unticked) and that shop's payments arrive already sorted. Food (meal by time) keeps the meal following when you paid; or pick a fixed tag.",
+      "Tick \"Remember …\" (it starts unticked) and that shop's payments arrive already sorted: \"Always food, meal by time\" keeps the meal following when you paid; \"Always Food · Coffee\" fixes the tag.",
+      "The name at the top of an Inbox item can be changed or left blank; it's saved as the expense's note.",
       "See, change or forget remembered shops (or add one) in Settings → Automation → Shops it remembers.",
       "Items labelled Transfer may be money moved to your own account. That isn't spending, so dismiss them.",
       "Double-tapped by accident? Screens without an amount and receipts already sent aren't added.",
@@ -152,7 +153,7 @@ const TOPICS: Topic[] = [
     anchor: "12-transactions-export-and-backup",
     points: [
       "Overview → Export: this month or all expenses (CSV for Excel/Sheets), savings balances, or a full backup (JSON).",
-      "Activity lists 50 expenses at a time; search and filters cover all of them.",
+      "Activity lists 50 expenses at a time; search and filters cover all of them. Tap + on a day to add an expense on that date.",
     ],
   },
   {
