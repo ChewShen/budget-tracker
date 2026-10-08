@@ -151,6 +151,10 @@ Each entry covers what was chosen, why, and what it costs. For what changed and 
 - **Tokens can only add to your Inbox:** Only a SHA-256 hash is stored (the token is shown once), the endpoint looks it up with the service role and writes only for that token's owner, never returns data beyond what it just parsed, rejects bodies over 8,000 characters, and stops at 500 waiting items. Tokens are revoked rather than deleted, so "last used" stays visible.
 - **Order chosen:** TnG first (most common way to pay here), then bank alerts and statements, then Apple Pay. On iPhone, TnG needs the screen-reading route because iOS doesn't let apps read other apps' notifications.
 
+### Your own order: ↑ ↓, not dragging
+- **Why:** categories (`categories.position`) and savings accounts (`position`) can be put in your order from Settings → Reorder. Arrows rather than drag-and-drop: dragging fights with scrolling on a phone, is hard to hit, and needs a library; arrows always work. Moving renumbers the list and saves only the rows that moved.
+- **Where it applies:** lists you pick from (Add expense, the Inbox, filters, Budgets). Charts keep sorting by amount, where the biggest first is the point. Categories without a position (added after reordering, or before the migration) come after, by name (`src/lib/category-order.ts`).
+
 ### Budgets are one row per category
 - **Why:** A monthly limit per category (`UNIQUE (user_id, category_id)`) covers the common need without the complexity of per-month or rollover budgets. At-risk uses the same forecast rule as the Overview, so the two never disagree.
 

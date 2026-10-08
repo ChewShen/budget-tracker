@@ -126,6 +126,25 @@ describe("migrations", () => {
     expect(await count(db, "SELECT count(*) AS n FROM categories WHERE role = 'instalments' AND user_id = $1", [friend])).toBe(0);
   });
 
+  it("numbers each account's categories in name order, once", async () => {
+    const order = await db.query<{ name: string; position: number }>(
+      "SELECT name, position FROM categories WHERE user_id = $1 ORDER BY position", [owner]
+    );
+    expect(order.rows).toEqual([
+      { name: "Bills", position: 0 },
+      { name: "Food", position: 1 },
+      { name: "Instalments", position: 2 },
+    ]);
+    // A category added later has none, so it sorts after the numbered ones.
+    await rolledBack(db, async (tx) => {
+      await tx.query("INSERT INTO categories (user_id, name) VALUES ($1, 'Aaa new')", [owner]);
+      const last = await tx.query<{ name: string }>(
+        "SELECT name FROM categories WHERE user_id = $1 ORDER BY position NULLS LAST, name", [owner]
+      );
+      expect(last.rows.at(-1)?.name).toBe("Aaa new");
+    });
+  });
+
   it("turns the old savings columns into accounts with the same net worth each month", async () => {
     const totals = await db.query<{ month: string; total: string }>(
       `SELECT to_char(month, 'YYYY-MM') AS month, sum(balance)::text AS total

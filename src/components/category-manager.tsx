@@ -1,11 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { Check, Plus, Star, Trash2 } from "lucide-react";
+import { ArrowUpDown, Check, Plus, Star, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useBudget } from "@/lib/budget-context";
 import { CATEGORY_ICON_OPTIONS, categoryIcon, categoryIconKey, categoryLabel } from "@/lib/categories";
 import { roleDescription } from "@/lib/roles";
+import { ReorderList } from "@/components/reorder-list";
 import { Category, Tag } from "@/lib/types";
 
 // Marks the category and tags the app uses (Food & dining card, meal suggestions).
@@ -200,9 +201,10 @@ function TagInput({
 }
 
 export function CategoryManager({ showTitle = true }: { showTitle?: boolean }) {
-  const { categories, tags, transactions, addCategory, renameCategory, deleteCategory, addTag, renameTag, deleteTag } =
+  const { categories, tags, transactions, addCategory, renameCategory, deleteCategory, addTag, renameTag, deleteTag, moveCategory } =
     useBudget();
   const [editor, setEditor] = useState<Editor>({ kind: "none" });
+  const [isReordering, setIsReordering] = useState(false);
   const close = () => setEditor({ kind: "none" });
 
   const usage = (key: "category_id" | "tag_id", id: string) => transactions.filter((t) => t[key] === id).length;
@@ -216,19 +218,48 @@ export function CategoryManager({ showTitle = true }: { showTitle?: boolean }) {
             Tap a category or tag to rename it. Anything in use by expenses can&apos;t be deleted.
             <span className="mt-1 flex items-center gap-1">
               <Star className="h-3 w-3 fill-current text-highlight" aria-hidden /> Used by the app (Food &amp; dining card, meal
-              suggestions). Rename freely.
+              suggestions, instalment plans). Rename freely.
             </span>
           </p>
         </div>
-        {editor.kind !== "new-category" && (
-          <button
-            onClick={() => setEditor({ kind: "new-category" })}
-            className="flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-sm font-medium transition hover:bg-secondary"
-          >
-            <Plus className="h-4 w-4" /> New category
-          </button>
+        {editor.kind !== "new-category" && !isReordering && (
+          <div className="flex flex-wrap gap-2">
+            {categories.length > 1 && (
+              <button
+                onClick={() => {
+                  close();
+                  setIsReordering(true);
+                }}
+                className="flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-sm font-medium transition hover:bg-secondary"
+              >
+                <ArrowUpDown className="h-4 w-4" /> Reorder
+              </button>
+            )}
+            <button
+              onClick={() => setEditor({ kind: "new-category" })}
+              className="flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-sm font-medium transition hover:bg-secondary"
+            >
+              <Plus className="h-4 w-4" /> New category
+            </button>
+          </div>
         )}
       </div>
+
+      {isReordering && (
+        <>
+          <p className="mt-3 text-xs text-muted-foreground">
+            Add expense, the Inbox, filters and budgets list categories in this order. Charts still sort by amount.
+          </p>
+          <ReorderList
+            items={categories.map((c) => {
+              const Icon = categoryIcon(c.name, c.icon);
+              return { id: c.id, label: categoryLabel(c.name), icon: <Icon className="h-4 w-4" /> };
+            })}
+            onMove={moveCategory}
+            onDone={() => setIsReordering(false)}
+          />
+        </>
+      )}
 
       {editor.kind === "new-category" && (
         <div className="mt-4">
@@ -239,88 +270,90 @@ export function CategoryManager({ showTitle = true }: { showTitle?: boolean }) {
         </div>
       )}
 
-      <ul className="mt-4 divide-y divide-border/70">
-        {categories.map((cat) => {
-          const Icon = categoryIcon(cat.name, cat.icon);
-          const catTags = tags.filter((t) => t.category_id === cat.id);
-          const isEditingCat = editor.kind === "category" && editor.id === cat.id;
-          return (
-            <li key={cat.id} className="py-4 first:pt-0 last:pb-0">
-              {isEditingCat ? (
-                <CategoryForm
-                  initial={cat}
-                  usedBy={usage("category_id", cat.id)}
-                  onCancel={close}
-                  onSave={(name, icon) => renameCategory(cat.id, name, icon)}
-                  onDelete={cat.role === "instalments" ? undefined : async () => {
-                    const warning = cat.role === "food" ? "\n\nIt's your food category: the Food & dining card and meal suggestions will stop." : "";
-                    if (window.confirm(`Delete ${categoryLabel(cat.name)} and its ${catTags.length} tags?${warning}`)) {
-                      if (await deleteCategory(cat.id)) close();
-                    }
-                  }}
-                />
-              ) : (
-                <button
-                  onClick={() => setEditor({ kind: "category", id: cat.id })}
-                  className="-mx-2 flex w-[calc(100%+1rem)] items-center gap-3 rounded-xl px-2 py-1.5 text-left transition hover:bg-secondary/40"
-                  aria-label={`Edit category ${categoryLabel(cat.name)}`}
-                >
-                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-secondary">
-                    <Icon className="h-4 w-4" />
-                  </span>
-                  <span className="flex flex-1 items-center gap-1.5 text-sm font-medium">
-                    {categoryLabel(cat.name)}
-                    <RoleStar role={cat.role} />
-                  </span>
-                  <span className="text-xs text-muted-foreground">
-                    {catTags.length} tag{catTags.length === 1 ? "" : "s"}
-                  </span>
-                </button>
-              )}
-
-              <div className="mt-2.5 flex flex-wrap gap-1.5 pl-11">
-                {catTags.map((tag) =>
-                  editor.kind === "tag" && editor.id === tag.id ? (
-                    <TagInput
-                      key={tag.id}
-                      initial={tag.name}
-                      usedBy={usage("tag_id", tag.id)}
-                      onCancel={close}
-                      onSave={(name) => renameTag(tag.id, name)}
-                      onDelete={async () => {
-                        const description = roleDescription(tag.role);
-                        if (description && !window.confirm(`Delete ${tag.name}? ${description}, so that will stop.`)) return;
-                        if (await deleteTag(tag.id)) close();
-                      }}
-                    />
-                  ) : (
-                    <button
-                      key={tag.id}
-                      onClick={() => setEditor({ kind: "tag", id: tag.id })}
-                      className="flex items-center gap-1 rounded-lg border px-2.5 py-1 text-xs text-muted-foreground transition hover:border-foreground/40 hover:text-foreground"
-                      aria-label={`Edit tag ${tag.name}`}
-                    >
-                      <RoleStar role={tag.role} />
-                      {tag.name}
-                    </button>
-                  )
-                )}
-                {editor.kind === "new-tag" && editor.categoryId === cat.id ? (
-                  <TagInput onCancel={close} onSave={async (name) => Boolean(await addTag(cat.id, name))} />
+      {!isReordering && (
+        <ul className="mt-4 divide-y divide-border/70">
+          {categories.map((cat) => {
+            const Icon = categoryIcon(cat.name, cat.icon);
+            const catTags = tags.filter((t) => t.category_id === cat.id);
+            const isEditingCat = editor.kind === "category" && editor.id === cat.id;
+            return (
+              <li key={cat.id} className="py-4 first:pt-0 last:pb-0">
+                {isEditingCat ? (
+                  <CategoryForm
+                    initial={cat}
+                    usedBy={usage("category_id", cat.id)}
+                    onCancel={close}
+                    onSave={(name, icon) => renameCategory(cat.id, name, icon)}
+                    onDelete={cat.role === "instalments" ? undefined : async () => {
+                      const warning = cat.role === "food" ? "\n\nIt's your food category: the Food & dining card and meal suggestions will stop." : "";
+                      if (window.confirm(`Delete ${categoryLabel(cat.name)} and its ${catTags.length} tags?${warning}`)) {
+                        if (await deleteCategory(cat.id)) close();
+                      }
+                    }}
+                  />
                 ) : (
                   <button
-                    onClick={() => setEditor({ kind: "new-tag", categoryId: cat.id })}
-                    className="flex items-center gap-1 rounded-lg border border-dashed px-2.5 py-1 text-xs text-muted-foreground transition hover:border-foreground/40 hover:text-foreground"
-                    aria-label={`Add tag to ${categoryLabel(cat.name)}`}
+                    onClick={() => setEditor({ kind: "category", id: cat.id })}
+                    className="-mx-2 flex w-[calc(100%+1rem)] items-center gap-3 rounded-xl px-2 py-1.5 text-left transition hover:bg-secondary/40"
+                    aria-label={`Edit category ${categoryLabel(cat.name)}`}
                   >
-                    <Plus className="h-3 w-3" /> Tag
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-secondary">
+                      <Icon className="h-4 w-4" />
+                    </span>
+                    <span className="flex flex-1 items-center gap-1.5 text-sm font-medium">
+                      {categoryLabel(cat.name)}
+                      <RoleStar role={cat.role} />
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      {catTags.length} tag{catTags.length === 1 ? "" : "s"}
+                    </span>
                   </button>
                 )}
-              </div>
-            </li>
-          );
-        })}
-      </ul>
+
+                <div className="mt-2.5 flex flex-wrap gap-1.5 pl-11">
+                  {catTags.map((tag) =>
+                    editor.kind === "tag" && editor.id === tag.id ? (
+                      <TagInput
+                        key={tag.id}
+                        initial={tag.name}
+                        usedBy={usage("tag_id", tag.id)}
+                        onCancel={close}
+                        onSave={(name) => renameTag(tag.id, name)}
+                        onDelete={async () => {
+                          const description = roleDescription(tag.role);
+                          if (description && !window.confirm(`Delete ${tag.name}? ${description}, so that will stop.`)) return;
+                          if (await deleteTag(tag.id)) close();
+                        }}
+                      />
+                    ) : (
+                      <button
+                        key={tag.id}
+                        onClick={() => setEditor({ kind: "tag", id: tag.id })}
+                        className="flex items-center gap-1 rounded-lg border px-2.5 py-1 text-xs text-muted-foreground transition hover:border-foreground/40 hover:text-foreground"
+                        aria-label={`Edit tag ${tag.name}`}
+                      >
+                        <RoleStar role={tag.role} />
+                        {tag.name}
+                      </button>
+                    )
+                  )}
+                  {editor.kind === "new-tag" && editor.categoryId === cat.id ? (
+                    <TagInput onCancel={close} onSave={async (name) => Boolean(await addTag(cat.id, name))} />
+                  ) : (
+                    <button
+                      onClick={() => setEditor({ kind: "new-tag", categoryId: cat.id })}
+                      className="flex items-center gap-1 rounded-lg border border-dashed px-2.5 py-1 text-xs text-muted-foreground transition hover:border-foreground/40 hover:text-foreground"
+                      aria-label={`Add tag to ${categoryLabel(cat.name)}`}
+                    >
+                      <Plus className="h-3 w-3" /> Tag
+                    </button>
+                  )}
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
     </section>
   );
 }

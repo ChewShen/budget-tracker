@@ -9,6 +9,7 @@ import { defaultEntryDate } from "@/lib/preferences";
 import { mealForHour } from "@/lib/roles";
 import { buildSnapshots, draftFor, fromLegacySavings, liquidOf, netWorthOf } from "@/lib/savings";
 import { goalProgress, netTarget } from "@/lib/goals";
+import { byCategoryOrder } from "@/lib/category-order";
 import type { Goal, RecurringBill, SavingsAccount, Tag, Transaction } from "@/lib/types";
 
 // The money and date logic behind Overview, Budgets, Bills, Goals, Savings and reminders.
@@ -309,6 +310,18 @@ describe("which date Add expense starts on", () => {
 
   it("suggests the meal for the time of day", () => {
     expect([4, 5, 11, 15, 17, 22].map(mealForHour)).toEqual(["supper", "breakfast", "lunch", "snack", "dinner", "supper"]);
+  });
+});
+
+describe("category order", () => {
+  it("follows your order, then puts categories without one after, by name", () => {
+    const cats = [
+      { name: "Transport", position: 1 },
+      { name: "Zakat", position: null },
+      { name: "Food", position: 0 },
+      { name: "Books" },
+    ];
+    expect([...cats].sort(byCategoryOrder).map((c) => c.name)).toEqual(["Food", "Transport", "Books", "Zakat"]);
   });
 });
 

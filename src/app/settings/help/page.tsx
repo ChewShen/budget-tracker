@@ -58,6 +58,7 @@ const TOPICS: Topic[] = [
     anchor: "3-categories-and-tags",
     points: [
       "Settings → Categories & tags: tap to rename. Anything used by expenses can't be deleted; rename it instead.",
+      "Reorder: put the categories you use most first. Add expense, the Inbox, filters and Budgets follow your order; charts sort by amount. Savings accounts have Reorder too.",
       "★ marks your food category and meal tags, which power the Food & dining card and meal suggestions. Rename them freely; the star follows.",
     ],
   },

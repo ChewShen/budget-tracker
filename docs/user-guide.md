@@ -72,6 +72,8 @@ Tap **+** (phone) or **Add expense** (computer).
 
 **Settings → Categories & tags.** Tap a category or tag to rename it (and pick an icon for categories). Anything used by expenses can't be deleted, so your history stays intact; rename it instead.
 
+**Your own order:** tap **Reorder** and use **↑ ↓** to move categories, e.g. the ones you use most to the top. Add expense, the Inbox, Activity's filters and Budgets follow it; charts still sort by amount. New categories go at the end. Savings accounts have the same **Reorder** in Settings → Savings accounts (the order they're listed in when you record balances).
+
 **The ★ star** marks the ones the app relies on: your **food** category (for the Food & dining card) and the **meal tags** (breakfast, lunch, tea time, dinner, late night) used for meal suggestions and "Same as last entry". You can rename them freely (e.g. "Makan"); the star follows them. Deleting a starred one asks first, because that feature stops working. **Instalments** (created when you first buy a goal on instalments) is starred too: it holds your plans, so it can be renamed but not deleted.
 
 ---

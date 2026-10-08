@@ -7,6 +7,7 @@ import { formatCurrency } from "@/lib/utils";
 import { CategoryIcon, categoryLabel } from "@/lib/categories";
 import { Transaction } from "@/lib/types";
 import { useQuickAdd } from "@/components/app-shell";
+import { useBudget } from "@/lib/budget-context";
 import { cn } from "@/lib/utils";
 
 interface LedgerTableProps {
@@ -32,9 +33,13 @@ export function LedgerTable({
   // until asked for more. Search, filters and day totals still cover every row.
   const [visible, setVisible] = useState(pageSize);
 
-  const categories = Array.from(
-    new Set(transactions.map((t) => t.category_name).filter(Boolean))
-  ) as string[];
+  // Categories that have expenses here, in your order (Settings → Categories & tags → Reorder).
+  const { categories: allCategories } = useBudget();
+  const used = new Set(transactions.map((t) => t.category_name).filter(Boolean));
+  const categories = [
+    ...allCategories.map((c) => c.name).filter((name) => used.has(name)),
+    ...[...used].filter((name) => !allCategories.some((c) => c.name === name)),
+  ] as string[];
 
   const query = searchTerm.toLowerCase();
   const filtered = transactions.filter((tx) => {

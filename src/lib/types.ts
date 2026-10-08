@@ -6,6 +6,7 @@ export interface Category {
   // Marked categories the app relies on (see lib/roles.ts): "food" for the Food & dining card and
   // meal suggestions; "instalments" for plans bought from Goals (can be renamed, not deleted).
   role?: "food" | "instalments" | null;
+  position?: number | null; // your order (Settings → Reorder); none = after the ordered ones, by name
 }
 
 export interface Tag {
