@@ -15,6 +15,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.26.0] - 2026-10-08
+
+### Changed
+- **Instalment plans bought from Goals get their own category, "Instalments"** (renamable, not deletable, starred like the food category), so committed payments don't count as new Shopping or use up a Shopping budget. Bought it → Instalments no longer asks for a category; only a down payment asks for its category and tag. Existing plans bought from Goals move there with their past payments (migration `2026-10-08_instalments_category.sql`); plans made in Settings → Monthly bills stay where you put them.
+
+---
+
 ## [0.25.0] - 2026-10-08
 
 ### Changed
