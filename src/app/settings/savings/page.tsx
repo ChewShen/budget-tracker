@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { Archive, ArchiveRestore, Check, Lock, Plus, Trash2, Wallet } from "lucide-react";
+import { Archive, ArchiveRestore, ArrowUpDown, Check, Lock, Plus, Trash2, Wallet } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useBudget } from "@/lib/budget-context";
+import { ReorderList } from "@/components/reorder-list";
 import type { SavingsAccount } from "@/lib/types";
 
 const KINDS: { value: SavingsAccount["kind"]; label: string; description: string }[] = [
@@ -124,9 +125,10 @@ function AccountForm({
 }
 
 export default function SavingsAccountsSettingsPage() {
-  const { savingsAccounts, savingsBalances, addSavingsAccount, updateSavingsAccount, deleteSavingsAccount, showToast } =
+  const { savingsAccounts, savingsBalances, addSavingsAccount, updateSavingsAccount, deleteSavingsAccount, moveSavingsAccount, showToast } =
     useBudget();
   const [editing, setEditing] = useState<string | "new" | null>(null);
+  const [isReordering, setIsReordering] = useState(false);
   const close = () => setEditing(null);
 
   const byOrder = (a: SavingsAccount, b: SavingsAccount) => a.position - b.position || a.name.localeCompare(b.name);
@@ -144,15 +146,40 @@ export default function SavingsAccountsSettingsPage() {
               What you record at the end of each month on the Savings page. Tap one to rename it.
             </p>
           </div>
-          {editing !== "new" && (
-            <button
-              onClick={() => setEditing("new")}
-              className="flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-sm font-medium transition hover:bg-secondary"
-            >
-              <Plus className="h-4 w-4" /> New account
-            </button>
+          {editing !== "new" && !isReordering && (
+            <div className="flex flex-wrap gap-2">
+              {active.length > 1 && (
+                <button
+                  onClick={() => {
+                    close();
+                    setIsReordering(true);
+                  }}
+                  className="flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-sm font-medium transition hover:bg-secondary"
+                >
+                  <ArrowUpDown className="h-4 w-4" /> Reorder
+                </button>
+              )}
+              <button
+                onClick={() => setEditing("new")}
+                className="flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-sm font-medium transition hover:bg-secondary"
+              >
+                <Plus className="h-4 w-4" /> New account
+              </button>
+            </div>
           )}
         </div>
+
+        {isReordering && (
+          <ReorderList
+            items={active.map((a) => ({
+              id: a.id,
+              label: a.name,
+              icon: a.kind === "locked" ? <Lock className="h-4 w-4" /> : <Wallet className="h-4 w-4" />,
+            }))}
+            onMove={moveSavingsAccount}
+            onDone={() => setIsReordering(false)}
+          />
+        )}
 
         {editing === "new" && (
           <div className="mt-4">
@@ -167,7 +194,7 @@ export default function SavingsAccountsSettingsPage() {
           </div>
         )}
 
-        {active.length === 0 && editing !== "new" ? (
+        {isReordering ? null : active.length === 0 && editing !== "new" ? (
           <p className="mt-4 text-sm text-muted-foreground">
             No accounts yet. Add your bank accounts, e-wallets, EPF or investments.
           </p>

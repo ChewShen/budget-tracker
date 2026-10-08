@@ -255,6 +255,9 @@ One-off SQL changes for existing databases live in [`scripts/migrations/`](scrip
 - `2026-10-04_job_runs.sql`: `job_runs`, a log of background jobs (nightly reminders, the nightly bill auto-add, weekly backups, Shortcut errors) shown in Settings → Account, with a warning on Overview when one fails or stops running. The auto-add job now logs each run. Its last query runs the auto-add once (adding any bill due today, as tonight's run would).
 - `2026-10-04_goal_contributions_owner.sql`: money set aside for a goal must be for one of your own goals (the same check every other reference has). Its last query should show 0.
 - `2026-10-04_merchant_rule_categories.sql`: merchant rules remember a category, with the tag optional ("TEALIVE → Food", the meal still by payment time), for Settings → Automation → Shops it remembers. Existing rules keep their tag and get its category.
+- `2026-10-08_instalments_by_amount.sql`: instalment plans count payments by amount (paying early, two months at once or the rest at once all count); the nightly auto-add only adds what's still short for the month. Its last query shows each plan's total and paid.
+- `2026-10-08_instalments_category.sql`: an "Instalments" category (renamable, not deletable) for plans bought from Goals; existing ones move there with their past payments. Plans made in Settings → Monthly bills stay where they are. Its last query lists each plan and its category.
+- `2026-10-08_category_order.sql`: your own order for categories (Settings → Categories & tags → Reorder); existing ones start in alphabetical order.
 
 ### Adding a friend
 Sign-up stays off, so strangers can't create accounts. To give someone their own account:

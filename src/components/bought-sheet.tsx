@@ -101,8 +101,9 @@ export function BoughtSheet({
   // What the monthly amounts add up to (can differ from the price by a few sen of rounding; at 0%
   // that's still "same as paying upfront"). Matches what Goals shows as left to pay.
   const payments = Math.round(terms.monthly * monthCount * 100) / 100;
-  const planValid = price > 0 && monthCount > 0 && terms.monthly > 0 && Boolean(startMonth) && Boolean(categoryId);
-  // The down payment is logged under the chosen tag, so it needs one.
+  const planValid = price > 0 && monthCount > 0 && terms.monthly > 0 && Boolean(startMonth);
+  // What you paid now (in full, or the down payment) is logged under the chosen category and tag;
+  // the plan's monthly payments go under Instalments.
   const needsTag = mode === "full" || downPayment > 0;
 
   const submit = async (e: React.FormEvent) => {
@@ -123,7 +124,6 @@ export function BoughtSheet({
     } else {
       if (!planValid) return setIsBusy(false);
       ok = await onConfirmInstalments(goal, {
-        category_id: categoryId,
         monthly: terms.monthly,
         installment_count: monthCount,
         start_month: `${startMonth}-01`,
@@ -318,26 +318,32 @@ export function BoughtSheet({
             </>
           )}
 
-          <div className="grid grid-cols-2 gap-3">
-            <label className="block">
-              <span className="text-xs text-muted-foreground">Category</span>
-              <select
-                value={categoryId}
-                onChange={(e) => {
-                  setCategoryId(e.target.value);
-                  setTagId(tags.find((t) => t.category_id === e.target.value)?.id ?? "");
-                }}
-                className="field mt-1"
-                aria-label="Category"
-              >
-                {categories.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {categoryLabel(c.name)}
-                  </option>
-                ))}
-              </select>
-            </label>
-            {needsTag && (
+          {mode !== "full" && (
+            <p className="text-xs text-muted-foreground">
+              The monthly payments go under <strong className="text-foreground">Instalments</strong>, so they don&apos;t count
+              as new shopping each month.
+            </p>
+          )}
+          {needsTag && (
+            <div className="grid grid-cols-2 gap-3">
+              <label className="block">
+                <span className="text-xs text-muted-foreground">{mode === "full" ? "Category" : "Down payment category"}</span>
+                <select
+                  value={categoryId}
+                  onChange={(e) => {
+                    setCategoryId(e.target.value);
+                    setTagId(tags.find((t) => t.category_id === e.target.value)?.id ?? "");
+                  }}
+                  className="field mt-1"
+                  aria-label="Category"
+                >
+                  {categories.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {categoryLabel(c.name)}
+                    </option>
+                  ))}
+                </select>
+              </label>
               <label className="block">
                 <span className="text-xs text-muted-foreground">{mode === "full" ? "Tag" : "Down payment tag"}</span>
                 <select value={tagId} onChange={(e) => setTagId(e.target.value)} className="field mt-1" aria-label="Tag">
@@ -349,8 +355,8 @@ export function BoughtSheet({
                   ))}
                 </select>
               </label>
-            )}
-          </div>
+            </div>
+          )}
 
           {(mode === "full" || downPayment > 0) && (
             <label className="block">
