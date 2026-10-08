@@ -9,6 +9,7 @@ import { formatCurrency, ordinal } from "@/lib/utils";
 import { RecurringBill } from "@/lib/types";
 import { dueDateIn } from "@/lib/bills";
 import { instalmentProgress, isInstalment } from "@/lib/instalments";
+import { PayOffButton } from "@/components/pay-off-button";
 
 const DAYS = Array.from({ length: 31 }, (_, i) => i + 1);
 const toAmount = (text: string) => {
@@ -197,6 +198,12 @@ function BillForm({
           {mode === "cloud" ? "at the next daily run (just after midnight)" : "next time the app opens"}.
         </p>
       )}
+      {bill && isInstalment(bill) && (
+        <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
+          <span>Paid early or more than one month? Log it with this tag; payments count by amount.</span>
+          <PayOffButton bill={bill} name={tags.find((t) => t.id === bill.tag_id)?.name ?? "this plan"} />
+        </div>
+      )}
       <div className="flex flex-wrap items-center justify-end gap-2">
         {bill && (
           <button
@@ -301,7 +308,9 @@ export function BillsManager({ showTitle = true }: { showTitle?: boolean }) {
                     </span>
                     <span className="block text-xs text-muted-foreground">
                       {plan
-                        ? `${plan.paid} of ${plan.total} paid · last ${format(parseISO(`${plan.lastMonth}-01`), "MMM yyyy")}`
+                        ? plan.finished
+                          ? `Paid off · ${formatCurrency(plan.paidAmount)}`
+                          : `${plan.paid} of ${plan.total} paid · ${formatCurrency(plan.owed)} left · last ${format(parseISO(`${plan.lastMonth}-01`), "MMM yyyy")}`
                         : categoryLabel(categoryName)}
                     </span>
                   </span>

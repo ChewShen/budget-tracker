@@ -322,6 +322,39 @@ describe("auto-adding monthly bills", () => {
     });
   });
 
+  it("adds only what a plan is still short this month (paid ahead, part-paid, paid off)", async () => {
+    await rolledBack(db, async (tx) => {
+      const month = "date_trunc('month', (now() AT TIME ZONE 'Asia/Kuala_Lumpur'))::date";
+      // 6 × RM 10 plans that started last month, so RM 20 is due by the end of this month.
+      const plan = async (name: string, payments: [string, number][]) => {
+        const tag = await one<{ id: string; category_id: string }>(tx, "SELECT id, category_id FROM tags WHERE user_id = $1 AND name = $2", [friend, name]);
+        await tx.query(
+          `INSERT INTO recurring_sentinel (user_id, tag_id, expected_amount, due_day, auto_log, installment_count, start_month)
+           VALUES ($1, $2, 10, 1, true, 6, ${month} - interval '1 month')`,
+          [friend, tag.id]
+        );
+        for (const [when, amount] of payments)
+          await tx.query(`INSERT INTO transactions (user_id, date, category_id, tag_id, amount) VALUES ($1, ${when}, $2, $3, $4)`, [
+            friend, tag.category_id, tag.id, amount,
+          ]);
+      };
+      await plan("Phone", [[`${month} - interval '1 month'`, 20]]); // paid two at once last month
+      await plan("Electric", [[`${month} - interval '1 month'`, 10], [`${month}`, 4]]); // RM 4 so far this month
+      await plan("Water", [[`${month} - interval '1 month'`, 60]]); // paid off
+      await plan("Internet", [[`${month} - interval '1 month'`, 10]]); // on track: this month's is due
+      await one(tx, "SELECT public.auto_log_bills() AS n");
+      const added = await tx.query<{ name: string; amount: string }>(
+        `SELECT t.name, x.amount::text AS amount FROM transactions x JOIN tags t ON t.id = x.tag_id
+         WHERE x.user_id = $1 AND x.description = 'Auto-added monthly bill' ORDER BY t.name`,
+        [friend]
+      );
+      expect(added.rows).toEqual([
+        { name: "Electric", amount: "6.00" },
+        { name: "Internet", amount: "10.00" },
+      ]);
+    });
+  });
+
   it("logs a failed run instead of losing it", async () => {
     await rolledBack(db, async (tx) => {
       // Break the job: a check that every insert fails.

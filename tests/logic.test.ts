@@ -3,7 +3,7 @@ import { calculateDailyAverage, calculateMonthlyInterest, calculateSalaryMetrics
 import { monthForecast, monthsBefore } from "@/lib/analytics";
 import { budgetStatus } from "@/lib/budgets";
 import { dueAutoBills, dueDateIn } from "@/lib/bills";
-import { billActiveIn, instalmentProgress, lastPaymentMonth, planMonths, planTerms, totalOwed } from "@/lib/instalments";
+import { billActiveIn, instalmentProgress, lastPaymentMonth, planMonths, planShortfall, planTerms, totalOwed } from "@/lib/instalments";
 import { buildReminders, DEFAULT_REMINDER_PREFS, type ReminderData } from "@/lib/reminders";
 import { defaultEntryDate } from "@/lib/preferences";
 import { mealForHour } from "@/lib/roles";
@@ -142,6 +142,67 @@ describe("instalments", () => {
     expect(instalmentProgress(plan, paid)).toMatchObject({ total: 3, paid: 2, owed: 100, finished: false });
     expect(instalmentProgress(plan, paid, "2026-11-30")).toMatchObject({ paid: 1, owed: 200 });
     expect(instalmentProgress(bill(), paid)).toBeNull();
+  });
+
+  describe("counts payments by amount, however they're paid", () => {
+    // 6 × RM 100, Oct to Mar.
+    const six = bill({ installment_count: 6, start_month: "2026-10-01", expected_amount: 100, auto_log: true, due_day: 5 });
+    const pay = (date: string, amount: number) => tx(date, amount, { tag_id: "tag-netflix" });
+
+    it("two months paid at once count as two", () => {
+      const p = instalmentProgress(six, [pay("2026-10-05", 200)]);
+      expect(p).toMatchObject({ paid: 2, paidAmount: 200, owed: 400, finished: false });
+      expect(planShortfall(six, [pay("2026-10-05", 200)], "2026-11")).toBe(0); // November is covered
+      expect(planShortfall(six, [pay("2026-10-05", 200)], "2026-12")).toBe(100);
+    });
+
+    it("a month paid early covers that month, and isn't auto-added again", () => {
+      const txs = [pay("2026-10-05", 100), pay("2026-10-20", 100)];
+      expect(instalmentProgress(six, txs)?.paid).toBe(2);
+      expect(dueAutoBills([six], TAGS, txs, new Date(2026, 10, 6))).toEqual([]); // 6 Nov: nothing to add
+      expect(dueAutoBills([six], TAGS, txs, new Date(2026, 11, 6))).toHaveLength(1); // 6 Dec: due again
+    });
+
+    it("settling the rest early finishes the plan and stops auto-add", () => {
+      const txs = [pay("2026-10-05", 100), pay("2026-11-05", 100), pay("2026-11-20", 400)];
+      expect(instalmentProgress(six, txs)).toMatchObject({ paid: 6, owed: 0, finished: true });
+      expect(dueAutoBills([six], TAGS, txs, new Date(2027, 0, 6))).toEqual([]);
+      expect(totalOwed([six], txs, "2026-11-30")).toBe(0);
+    });
+
+    it("a part payment leaves only the difference to add", () => {
+      const txs = [pay("2026-10-05", 100), pay("2026-11-02", 40)];
+      expect(planShortfall(six, txs, "2026-11")).toBe(60);
+      expect(dueAutoBills([six], TAGS, txs, new Date(2026, 10, 6))[0].amount).toBe(60);
+      expect(instalmentProgress(six, txs)).toMatchObject({ paid: 1, paidAmount: 140, owed: 460 });
+    });
+
+    it("never adds more than one payment a month, even after a missed month", () => {
+      // October wasn't logged; November still only needs November's payment.
+      expect(planShortfall(six, [], "2026-11")).toBe(100);
+      expect(planShortfall(six, [pay("2026-11-05", 100)], "2026-11")).toBe(0);
+    });
+
+    it("counts a first payment made the month before the plan starts", () => {
+      expect(instalmentProgress(six, [pay("2026-09-28", 100)])?.paid).toBe(1);
+      expect(instalmentProgress(six, [pay("2026-08-28", 100)])?.paid).toBe(0); // too early: another purchase
+    });
+
+    it("doesn't remind about a month already covered", () => {
+      const data: ReminderData = {
+        today: "2026-11-04",
+        bills: [{ ...six, auto_log: false }],
+        tags: TAGS,
+        categories: [],
+        transactions: [pay("2026-10-05", 200), tx("2026-11-04", 1)],
+        budgets: [],
+        goals: [],
+      };
+      expect(buildReminders(data, DEFAULT_REMINDER_PREFS)).toEqual([]);
+      expect(buildReminders({ ...data, transactions: [pay("2026-10-05", 100)] }, DEFAULT_REMINDER_PREFS).map((r) => r.title)).toEqual([
+        "Netflix is due tomorrow · RM\u00a0100.00",
+      ]);
+    });
   });
 
   it("only counts what's owed from when the plan was taken out", () => {

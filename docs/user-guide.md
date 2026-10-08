@@ -138,6 +138,12 @@ The goal moves to **Paying off** ("2 of 12 paid · RM 3,749.20 left · last paym
 
 **Without a goal:** **Settings → Monthly bills → Add bill → Instalment plan**, with the monthly amount, due day, number of payments and first payment month.
 
+**Paying early, two at once, or the rest at once.** Payments count by **amount**, not by month, so just log what you actually paid with the plan's tag:
+- Paid November's in October, or RM 200 for two months at once: the plan shows 2 of 6 paid, and November isn't auto-added or reminded about.
+- Paid part of a month: auto-add only adds the difference.
+- Settling early: tap **Pay off the rest** (Goals → Paying off, or the plan in Settings → Monthly bills). It logs what's left as one payment today; the plan shows **Paid off** and nothing more is added.
+- A month you missed isn't added on top later: auto-add never adds more than one payment a month.
+
 **How it counts.** Each payment is spending in the month it's paid (not the full price at once), so budgets and your savings rate follow real cash flow. The plan only appears in bills, the forecast, budgets and reminders between its first and last payment. **Savings** shows what you still owe and your **net worth after what you owe**.
 
 ---

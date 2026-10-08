@@ -102,6 +102,7 @@ const TOPICS: Topic[] = [
     points: [
       "Goals → Bought it → Instalments: price, down payment (starts at what you set aside; clear it to keep that money free), fees (0% for most pay-later plans), number of payments, first month and due day.",
       "Each payment is a monthly bill until the last one; the goal shows Paying off with what's left.",
+      "Paid early, two months at once, or part of one? Log it with the plan's tag: payments count by amount, and auto-add skips months already covered. Pay off the rest logs what's left in one go.",
       "No goal? Settings → Monthly bills → Add bill → Instalment plan.",
       "Savings shows what you still owe and your net worth after it.",
     ],
