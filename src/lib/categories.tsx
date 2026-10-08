@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  CalendarClock,
   Baby,
   BookOpen,
   Briefcase,
@@ -50,12 +51,14 @@ export const CATEGORY_ICON_OPTIONS: Record<string, LucideIcon> = {
   wallet: Wallet,
   baby: Baby,
   "paw-print": PawPrint,
+  "calendar-clock": CalendarClock,
   "circle-dashed": CircleDashed,
 };
 
 // Fallback for categories created before icons were selectable (the Excel import).
 const ICON_BY_NAME: Record<string, string> = {
   Food: "utensils",
+  Instalments: "calendar-clock",
   Transport: "car",
   Home_Bills: "home",
   Self_care: "sparkles",

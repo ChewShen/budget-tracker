@@ -70,6 +70,22 @@ const DATA_AFTER: Record<string, (ownerId: string) => string> = {
   "2026-10-03_inbox.sql": (ownerId) => `
     INSERT INTO public.merchant_rules (user_id, pattern, tag_id)
     SELECT '${ownerId}', 'OLDRULE', id FROM public.tags WHERE user_id = '${ownerId}' AND name = 'Lunch';`,
+  // A plan bought from Goals (its tag filed under Bills, with a payment and a merchant rule) and a
+  // plan made in Settings, before plans got their own category.
+  "2026-10-08_instalments_by_amount.sql": (ownerId) => `
+    INSERT INTO public.goals (id, user_id, name, target_amount, status)
+      VALUES ('00000000-0000-0000-0000-0000000000d1', '${ownerId}', 'New phone', 1200, 'bought');
+    INSERT INTO public.tags (id, user_id, category_id, name)
+      SELECT '00000000-0000-0000-0000-0000000000b1', '${ownerId}', id, 'New phone instalment' FROM public.categories WHERE user_id = '${ownerId}' AND name = 'Bills';
+    INSERT INTO public.tags (id, user_id, category_id, name)
+      SELECT '00000000-0000-0000-0000-0000000000b2', '${ownerId}', id, 'Atome' FROM public.categories WHERE user_id = '${ownerId}' AND name = 'Bills';
+    INSERT INTO public.recurring_sentinel (user_id, tag_id, expected_amount, due_day, installment_count, start_month, goal_id) VALUES
+      ('${ownerId}', '00000000-0000-0000-0000-0000000000b1', 100, 5, 12, '2026-09-01', '00000000-0000-0000-0000-0000000000d1'),
+      ('${ownerId}', '00000000-0000-0000-0000-0000000000b2', 50, 5, 3, '2026-09-01', NULL);
+    INSERT INTO public.transactions (user_id, date, category_id, tag_id, amount)
+      SELECT '${ownerId}', '2026-09-05', category_id, id, 100 FROM public.tags WHERE id IN ('00000000-0000-0000-0000-0000000000b1', '00000000-0000-0000-0000-0000000000b2');
+    INSERT INTO public.merchant_rules (user_id, pattern, category_id, tag_id)
+      SELECT '${ownerId}', 'PHONESHOP', category_id, id FROM public.tags WHERE id = '00000000-0000-0000-0000-0000000000b1';`,
 };
 
 export async function buildDatabase(): Promise<{ db: PGlite; ownerId: string }> {

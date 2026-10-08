@@ -3,7 +3,9 @@ export interface Category {
   name: string;
   color?: string;
   icon?: string | null; // key into CATEGORY_ICON_OPTIONS; null = pick by name
-  role?: "food" | null; // marked for the Food & dining card and meal suggestions (see lib/roles.ts)
+  // Marked categories the app relies on (see lib/roles.ts): "food" for the Food & dining card and
+  // meal suggestions; "instalments" for plans bought from Goals (can be renamed, not deleted).
+  role?: "food" | "instalments" | null;
 }
 
 export interface Tag {

@@ -82,9 +82,10 @@ describe("migrations", () => {
       expect(await count(db, `SELECT count(*) AS n FROM ${t} WHERE user_id IS NULL`), t).toBe(0);
       expect(await count(db, `SELECT count(*) AS n FROM ${t} WHERE user_id = $1`, [owner]), t).toBeGreaterThan(0);
     }
-    // The imported categories stay as they were; the default set is only for new accounts.
+    // The imported categories stay as they were (plus Instalments, for the plan bought from Goals);
+    // the default set is only for new accounts.
     const names = await db.query<{ name: string }>("SELECT name FROM categories WHERE user_id = $1 ORDER BY name", [owner]);
-    expect(names.rows.map((r) => r.name)).toEqual(["Bills", "Food"]);
+    expect(names.rows.map((r) => r.name)).toEqual(["Bills", "Food", "Instalments"]);
   });
 
   it("marks the food category and meal tags", async () => {
@@ -106,6 +107,23 @@ describe("migrations", () => {
        JOIN categories c ON c.id = r.category_id JOIN tags t ON t.id = r.tag_id WHERE r.pattern = 'OLDRULE'`
     );
     expect(rule).toEqual({ category: "Food", tag: "Lunch" });
+  });
+
+  it("moves plans bought from Goals into an Instalments category, with their payments and rules", async () => {
+    const where = async (tagId: string) =>
+      one<{ tag_cat: string; role: string | null; tx_cats: string; rule_cat: string | null }>(
+        db,
+        `SELECT c.name AS tag_cat, c.role,
+                (SELECT string_agg(DISTINCT xc.name, ',') FROM transactions x JOIN categories xc ON xc.id = x.category_id WHERE x.tag_id = t.id) AS tx_cats,
+                (SELECT rc.name FROM merchant_rules mr JOIN categories rc ON rc.id = mr.category_id WHERE mr.tag_id = t.id) AS rule_cat
+         FROM tags t JOIN categories c ON c.id = t.category_id WHERE t.id = $1`,
+        [tagId]
+      );
+    expect(await where("00000000-0000-0000-0000-0000000000b1")).toEqual({ tag_cat: "Instalments", role: "instalments", tx_cats: "Instalments", rule_cat: "Instalments" });
+    // A plan made in Settings keeps its tag where you put it.
+    expect(await where("00000000-0000-0000-0000-0000000000b2")).toEqual({ tag_cat: "Bills", role: null, tx_cats: "Bills", rule_cat: null });
+    // Only accounts with such plans get the category.
+    expect(await count(db, "SELECT count(*) AS n FROM categories WHERE role = 'instalments' AND user_id = $1", [friend])).toBe(0);
   });
 
   it("turns the old savings columns into accounts with the same net worth each month", async () => {

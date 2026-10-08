@@ -33,6 +33,7 @@ import { isSupabaseConfigured } from "./supabase/config";
 import { exitGuest, isGuestSession } from "./guest";
 import { dueAutoBills } from "./bills";
 import { fromLegacySavings } from "./savings";
+import { instalmentsCategory } from "./roles";
 
 export type NewTransaction = {
   amount: number;
@@ -65,8 +66,7 @@ export type BillChanges = Partial<
 
 // Bought a goal on instalments: the monthly plan, plus the down payment paid today (if any).
 export interface InstalmentPurchase {
-  category_id: string; // where the monthly payments are filed (their tag is created in it)
-  monthly: number;
+  monthly: number; // the payments go under the Instalments category, with a tag of their own
   installment_count: number;
   start_month: string; // YYYY-MM-01
   due_day: number;
@@ -973,15 +973,39 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
     return true;
   };
 
+  // The Instalments category (renamable, not deletable), created on first use. Before
+  // 2026-10-08_instalments_category.sql the mark can't be saved, so it's created without one.
+  const ensureInstalmentsCategory = async (): Promise<Category | null> => {
+    const existing = instalmentsCategory(categories);
+    if (existing) return existing;
+    const row = { name: "Instalments", icon: "calendar-clock", role: "instalments" as const };
+    let created: Category = { id: `cat-${Date.now()}`, ...row };
+    if (isCloud) {
+      const supabase = createClient();
+      let res = await supabase.from("categories").insert(row).select().single();
+      if (res.error?.code === "23514") res = await supabase.from("categories").insert({ name: row.name, icon: row.icon }).select().single();
+      if (res.error || !res.data) {
+        console.error("Supabase category insert error:", res.error);
+        showToast({ tone: "error", message: describeDbError(res.error || {}, "The Instalments category") });
+        return null;
+      }
+      created = res.data;
+    }
+    setCategories((prev) => [...prev, created].sort(byName));
+    return created;
+  };
+
   const markGoalBoughtOnInstalments = async (goal: Goal, plan: InstalmentPurchase) => {
-    // The plan gets its own tag ("iPhone 17 Pro instalment"), so its payments are easy to find
-    // and a month counts as paid when an expense with that tag is logged in it.
+    // The plan gets its own tag ("iPhone 17 Pro instalment") in the Instalments category, so its
+    // payments are easy to find and don't count as new spending in the category of the purchase.
+    const category = await ensureInstalmentsCategory();
+    if (!category) return false;
     const base = `${goal.name} instalment`.slice(0, 40);
     const taken = (n: string) =>
-      tags.some((t) => t.category_id === plan.category_id && t.name.toLowerCase() === n.toLowerCase());
+      tags.some((t) => t.category_id === category.id && t.name.toLowerCase() === n.toLowerCase());
     let name = base;
     for (let i = 2; taken(name); i++) name = `${base.slice(0, 36)} ${i}`;
-    const tag = await addTag(plan.category_id, name);
+    const tag = await addTag(category.id, name);
     if (!tag) return false;
 
     const bill = await addBill(tag.id, {
@@ -1054,6 +1078,10 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
   const deleteCategory = async (id: string) => {
     const current = categories.find((c) => c.id === id);
     if (!current) return false;
+    if (current.role === "instalments") {
+      showToast({ tone: "error", message: `${current.name} holds your instalment plans. Rename it instead.` });
+      return false;
+    }
     const used = transactions.filter((t) => t.category_id === id).length;
     if (used > 0) {
       showToast({

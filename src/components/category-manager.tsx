@@ -252,7 +252,7 @@ export function CategoryManager({ showTitle = true }: { showTitle?: boolean }) {
                   usedBy={usage("category_id", cat.id)}
                   onCancel={close}
                   onSave={(name, icon) => renameCategory(cat.id, name, icon)}
-                  onDelete={async () => {
+                  onDelete={cat.role === "instalments" ? undefined : async () => {
                     const warning = cat.role === "food" ? "\n\nIt's your food category: the Food & dining card and meal suggestions will stop." : "";
                     if (window.confirm(`Delete ${categoryLabel(cat.name)} and its ${catTags.length} tags?${warning}`)) {
                       if (await deleteCategory(cat.id)) close();

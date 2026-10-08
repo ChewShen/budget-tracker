@@ -72,7 +72,7 @@ Tap **+** (phone) or **Add expense** (computer).
 
 **Settings → Categories & tags.** Tap a category or tag to rename it (and pick an icon for categories). Anything used by expenses can't be deleted, so your history stays intact; rename it instead.
 
-**The ★ star** marks the ones the app relies on: your **food** category (for the Food & dining card) and the **meal tags** (breakfast, lunch, tea time, dinner, late night) used for meal suggestions and "Same as last entry". You can rename them freely (e.g. "Makan"); the star follows them. Deleting a starred one asks first, because that feature stops working.
+**The ★ star** marks the ones the app relies on: your **food** category (for the Food & dining card) and the **meal tags** (breakfast, lunch, tea time, dinner, late night) used for meal suggestions and "Same as last entry". You can rename them freely (e.g. "Makan"); the star follows them. Deleting a starred one asks first, because that feature stops working. **Instalments** (created when you first buy a goal on instalments) is starred too: it holds your plans, so it can be renamed but not deleted.
 
 ---
 
@@ -134,9 +134,11 @@ For things paid monthly: Atome, SPayLater, Shopee/Grab PayLater, 0% card plans, 
 4. **Number of payments**, **first payment** month and **due day**, and whether to **add each payment automatically**.
 5. Check the summary ("RM 181.17 × 12 · Nov 2026 to Oct 2027 … same as paying upfront") and tap **Start plan**.
 
+The monthly payments get their own tag ("iPhone 17 Pro instalment") in the **Instalments** category, so they don't count as new Shopping each month; the down payment is logged under the category and tag you pick.
+
 The goal moves to **Paying off** ("2 of 12 paid · RM 3,749.20 left · last payment Jul 2027") and becomes Completed after the last payment.
 
-**Without a goal:** **Settings → Monthly bills → Add bill → Instalment plan**, with the monthly amount, due day, number of payments and first payment month.
+**Without a goal:** **Settings → Monthly bills → Add bill → Instalment plan**, with the monthly amount, due day, number of payments and first payment month. You choose its tag, so it stays in whichever category you put it (a tag in Instalments keeps it with the others).
 
 **Paying early, two at once, or the rest at once.** Payments count by **amount**, not by month, so just log what you actually paid with the plan's tag:
 - Paid November's in October, or RM 200 for two months at once: the plan shows 2 of 6 paid, and November isn't auto-added or reminded about.
