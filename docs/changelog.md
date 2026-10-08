@@ -15,6 +15,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.27.0] - 2026-10-08
+
+### Added
+- **Your own order for categories**: Settings → Categories & tags → **Reorder**, with ↑ ↓ on each category. Add expense, the Inbox, Activity's filters and Budgets follow it; charts still sort by amount. Existing categories start in alphabetical order; new ones go at the end (migration `2026-10-08_category_order.sql`).
+- **Reorder savings accounts** the same way (Settings → Savings accounts), which sets the order they're listed in when you record balances.
+
+---
+
 ## [0.26.0] - 2026-10-08
 
 ### Changed
