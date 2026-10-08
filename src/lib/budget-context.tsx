@@ -33,6 +33,8 @@ import { isSupabaseConfigured } from "./supabase/config";
 import { exitGuest, isGuestSession } from "./guest";
 import { dueAutoBills } from "./bills";
 import { fromLegacySavings } from "./savings";
+import { instalmentsCategory } from "./roles";
+import { byCategoryOrder } from "./category-order";
 
 export type NewTransaction = {
   amount: number;
@@ -65,8 +67,7 @@ export type BillChanges = Partial<
 
 // Bought a goal on instalments: the monthly plan, plus the down payment paid today (if any).
 export interface InstalmentPurchase {
-  category_id: string; // where the monthly payments are filed (their tag is created in it)
-  monthly: number;
+  monthly: number; // the payments go under the Instalments category, with a tag of their own
   installment_count: number;
   start_month: string; // YYYY-MM-01
   due_day: number;
@@ -129,6 +130,8 @@ interface BudgetContextType {
   updateGoal: (id: string, changes: Partial<GoalInput & Pick<Goal, "status" | "bought_at" | "priority">>) => Promise<boolean>;
   deleteGoal: (id: string) => Promise<boolean>;
   moveGoal: (id: string, direction: -1 | 1) => Promise<void>;
+  moveCategory: (id: string, direction: -1 | 1) => Promise<void>;
+  moveSavingsAccount: (id: string, direction: -1 | 1) => Promise<void>;
   addContribution: (goalId: string, amount: number, note?: string) => Promise<boolean>;
   deleteContribution: (id: string) => Promise<boolean>;
   markGoalBought: (goalId: string, expense: NewTransaction) => Promise<boolean>;
@@ -262,7 +265,7 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
           setSavingsBalances(converted.balances);
         }
         const savedCats = localStorage.getItem(STORAGE_KEYS.CATEGORIES);
-        if (savedCats) setCategories(JSON.parse(savedCats));
+        if (savedCats) setCategories((JSON.parse(savedCats) as Category[]).sort(byCategoryOrder));
         const savedTags = localStorage.getItem(STORAGE_KEYS.TAGS);
         if (savedTags) setTags(JSON.parse(savedTags));
         const savedBudgets = localStorage.getItem(STORAGE_KEYS.BUDGETS);
@@ -318,7 +321,7 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      setCategories(cats.data || []);
+      setCategories([...(cats.data || [])].sort(byCategoryOrder));
       setTags(tgs.data || []);
       setTransactions(
         (txs.data || []).map((d: any) => ({
@@ -932,6 +935,56 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  // Move a category up/down (Settings → Reorder): renumber them all 0..n-1 with the swap applied,
+  // saving only the ones whose position changed.
+  const moveCategory = async (id: string, direction: -1 | 1) => {
+    const ordered = [...categories].sort(byCategoryOrder);
+    const i = ordered.findIndex((c) => c.id === id);
+    const j = i + direction;
+    if (i < 0 || j < 0 || j >= ordered.length) return;
+    [ordered[i], ordered[j]] = [ordered[j], ordered[i]];
+    const changed = ordered.flatMap((c, position) => (c.position === position ? [] : [{ id: c.id, position }]));
+    setCategories(ordered.map((c, position) => ({ ...c, position })));
+    if (!isCloud) return;
+    const supabase = createClient();
+    for (const { id: catId, position } of changed) {
+      const { error } = await supabase.from("categories").update({ position }).eq("id", catId);
+      if (error) {
+        console.error("Supabase category order error:", error);
+        showToast({
+          tone: "error",
+          message: ["42703", "PGRST204"].includes(error.code ?? "")
+            ? "Run scripts/migrations/2026-10-08_category_order.sql in Supabase to save the order."
+            : describeDbError(error, "The order"),
+        });
+        return;
+      }
+    }
+  };
+
+  // Move an active savings account up/down (Settings → Savings accounts → Reorder).
+  const moveSavingsAccount = async (id: string, direction: -1 | 1) => {
+    const byOrder = (a: SavingsAccount, b: SavingsAccount) => a.position - b.position || a.name.localeCompare(b.name);
+    const ordered = savingsAccounts.filter((a) => !a.archived).sort(byOrder);
+    const i = ordered.findIndex((a) => a.id === id);
+    const j = i + direction;
+    if (i < 0 || j < 0 || j >= ordered.length) return;
+    [ordered[i], ordered[j]] = [ordered[j], ordered[i]];
+    // Archived accounts keep their numbers after the active ones.
+    const changed = ordered.flatMap((a, position) => (a.position === position ? [] : [{ id: a.id, position }]));
+    setSavingsAccounts((prev) => prev.map((a) => ({ ...a, position: changed.find((c) => c.id === a.id)?.position ?? a.position })));
+    if (!isCloud) return;
+    const supabase = createClient();
+    for (const { id: accountId, position } of changed) {
+      const { error } = await supabase.from("savings_accounts").update({ position }).eq("id", accountId);
+      if (error) {
+        console.error("Supabase account order error:", error);
+        showToast({ tone: "error", message: savingsError(error, "Couldn't save the order.") });
+        return;
+      }
+    }
+  };
+
   const addContribution = async (goalId: string, amount: number, note?: string) => {
     const date = format(new Date(), "yyyy-MM-dd");
     let created: GoalContribution = { id: `gc-${Date.now()}`, goal_id: goalId, amount, date, note: note || null };
@@ -973,15 +1026,39 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
     return true;
   };
 
+  // The Instalments category (renamable, not deletable), created on first use. Before
+  // 2026-10-08_instalments_category.sql the mark can't be saved, so it's created without one.
+  const ensureInstalmentsCategory = async (): Promise<Category | null> => {
+    const existing = instalmentsCategory(categories);
+    if (existing) return existing;
+    const row = { name: "Instalments", icon: "calendar-clock", role: "instalments" as const };
+    let created: Category = { id: `cat-${Date.now()}`, ...row };
+    if (isCloud) {
+      const supabase = createClient();
+      let res = await supabase.from("categories").insert(row).select().single();
+      if (res.error?.code === "23514") res = await supabase.from("categories").insert({ name: row.name, icon: row.icon }).select().single();
+      if (res.error || !res.data) {
+        console.error("Supabase category insert error:", res.error);
+        showToast({ tone: "error", message: describeDbError(res.error || {}, "The Instalments category") });
+        return null;
+      }
+      created = res.data;
+    }
+    setCategories((prev) => [...prev, created].sort(byCategoryOrder));
+    return created;
+  };
+
   const markGoalBoughtOnInstalments = async (goal: Goal, plan: InstalmentPurchase) => {
-    // The plan gets its own tag ("iPhone 17 Pro instalment"), so its payments are easy to find
-    // and a month counts as paid when an expense with that tag is logged in it.
+    // The plan gets its own tag ("iPhone 17 Pro instalment") in the Instalments category, so its
+    // payments are easy to find and don't count as new spending in the category of the purchase.
+    const category = await ensureInstalmentsCategory();
+    if (!category) return false;
     const base = `${goal.name} instalment`.slice(0, 40);
     const taken = (n: string) =>
-      tags.some((t) => t.category_id === plan.category_id && t.name.toLowerCase() === n.toLowerCase());
+      tags.some((t) => t.category_id === category.id && t.name.toLowerCase() === n.toLowerCase());
     let name = base;
     for (let i = 2; taken(name); i++) name = `${base.slice(0, 36)} ${i}`;
-    const tag = await addTag(plan.category_id, name);
+    const tag = await addTag(category.id, name);
     if (!tag) return false;
 
     const bill = await addBill(tag.id, {
@@ -1025,7 +1102,7 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
       }
       created = data;
     }
-    setCategories((prev) => [...prev, created].sort(byName));
+    setCategories((prev) => [...prev, created].sort(byCategoryOrder));
     return created;
   };
 
@@ -1046,7 +1123,7 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
         return false;
       }
     }
-    setCategories((prev) => prev.map((c) => (c.id === id ? { ...c, ...changes } : c)).sort(byName));
+    setCategories((prev) => prev.map((c) => (c.id === id ? { ...c, ...changes } : c)).sort(byCategoryOrder));
     setTransactions((prev) => prev.map((t) => (t.category_id === id ? { ...t, category_name: name } : t)));
     return true;
   };
@@ -1054,6 +1131,10 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
   const deleteCategory = async (id: string) => {
     const current = categories.find((c) => c.id === id);
     if (!current) return false;
+    if (current.role === "instalments") {
+      showToast({ tone: "error", message: `${current.name} holds your instalment plans. Rename it instead.` });
+      return false;
+    }
     const used = transactions.filter((t) => t.category_id === id).length;
     if (used > 0) {
       showToast({
@@ -1232,6 +1313,8 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
         updateGoal,
         deleteGoal,
         moveGoal,
+        moveCategory,
+        moveSavingsAccount,
         addContribution,
         deleteContribution,
         markGoalBought,

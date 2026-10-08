@@ -1,6 +1,6 @@
 import { format, getDaysInMonth, parseISO } from "date-fns";
 import { RecurringBill, Tag, Transaction } from "./types";
-import { billActiveIn } from "./instalments";
+import { billActiveIn, planShortfall } from "./instalments";
 
 export const AUTO_BILL_NOTE = "Auto-added monthly bill";
 
@@ -30,13 +30,17 @@ export function dueAutoBills(
     const tag = tags.find((t) => t.id === bill.tag_id);
     const date = dueDateIn(month, bill.due_day);
     if (!tag || date > todayStr) return [];
-    if (transactions.some((t) => t.tag_id === bill.tag_id && t.date.startsWith(month))) return [];
+    // Plans: only what's still short by this month (nothing when paid ahead or off).
+    const short = planShortfall(bill, transactions, month);
+    if (short !== null) {
+      if (short <= 0) return [];
+    } else if (transactions.some((t) => t.tag_id === bill.tag_id && t.date.startsWith(month))) return [];
     return [
       {
         date,
         category_id: tag.category_id,
         tag_id: tag.id,
-        amount: bill.expected_amount,
+        amount: short ?? bill.expected_amount,
         description: AUTO_BILL_NOTE,
         is_one_off: false,
       },

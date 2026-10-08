@@ -1,5 +1,6 @@
 "use client";
 
+import { PayOffButton } from "@/components/pay-off-button";
 import { useState } from "react";
 import { format, parseISO } from "date-fns";
 import { CalendarClock, PartyPopper, Plus, Target } from "lucide-react";
@@ -147,11 +148,12 @@ export default function GoalsPage() {
             <CalendarClock className="h-4 w-4" /> Paying off
           </h3>
           <p className="mt-0.5 text-xs text-muted-foreground">
-            Bought on instalments. Each payment is a monthly bill until the last one.
+            Bought on instalments. Each payment is a monthly bill until the last one. Paid early or two at once? Log it
+            with the plan&apos;s tag: payments count by amount, and auto-add skips months already covered.
           </p>
           <ul className="mt-4 space-y-4">
             {payingOff.map(({ goal: g, bill, progress: p }) => {
-              const pct = p.total ? (p.paid / p.total) * 100 : 0;
+              const pct = p.totalAmount ? Math.min(100, (p.paidAmount / p.totalAmount) * 100) : 0;
               return (
                 <li key={g.id}>
                   <div className="flex items-baseline justify-between gap-3 text-sm">
@@ -170,6 +172,7 @@ export default function GoalsPage() {
                     </span>
                     <span>Last payment {format(parseISO(`${p.lastMonth}-01`), "MMM yyyy")}</span>
                   </div>
+                  <PayOffButton bill={bill} name={g.name} className="mt-2 inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition hover:bg-secondary disabled:opacity-40" />
                 </li>
               );
             })}

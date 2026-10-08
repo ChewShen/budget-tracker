@@ -58,6 +58,7 @@ const TOPICS: Topic[] = [
     anchor: "3-categories-and-tags",
     points: [
       "Settings → Categories & tags: tap to rename. Anything used by expenses can't be deleted; rename it instead.",
+      "Reorder: put the categories you use most first. Add expense, the Inbox, filters and Budgets follow your order; charts sort by amount. Savings accounts have Reorder too.",
       "★ marks your food category and meal tags, which power the Food & dining card and meal suggestions. Rename them freely; the star follows.",
     ],
   },
@@ -102,6 +103,8 @@ const TOPICS: Topic[] = [
     points: [
       "Goals → Bought it → Instalments: price, down payment (starts at what you set aside; clear it to keep that money free), fees (0% for most pay-later plans), number of payments, first month and due day.",
       "Each payment is a monthly bill until the last one; the goal shows Paying off with what's left.",
+      "Payments go under the Instalments category (renamable, not deletable), so they don't count as new Shopping; the down payment uses the category you pick.",
+      "Paid early, two months at once, or part of one? Log it with the plan's tag: payments count by amount, and auto-add skips months already covered. Pay off the rest logs what's left in one go.",
       "No goal? Settings → Monthly bills → Add bill → Instalment plan.",
       "Savings shows what you still owe and your net worth after it.",
     ],

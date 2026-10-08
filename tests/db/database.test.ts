@@ -82,9 +82,10 @@ describe("migrations", () => {
       expect(await count(db, `SELECT count(*) AS n FROM ${t} WHERE user_id IS NULL`), t).toBe(0);
       expect(await count(db, `SELECT count(*) AS n FROM ${t} WHERE user_id = $1`, [owner]), t).toBeGreaterThan(0);
     }
-    // The imported categories stay as they were; the default set is only for new accounts.
+    // The imported categories stay as they were (plus Instalments, for the plan bought from Goals);
+    // the default set is only for new accounts.
     const names = await db.query<{ name: string }>("SELECT name FROM categories WHERE user_id = $1 ORDER BY name", [owner]);
-    expect(names.rows.map((r) => r.name)).toEqual(["Bills", "Food"]);
+    expect(names.rows.map((r) => r.name)).toEqual(["Bills", "Food", "Instalments"]);
   });
 
   it("marks the food category and meal tags", async () => {
@@ -106,6 +107,42 @@ describe("migrations", () => {
        JOIN categories c ON c.id = r.category_id JOIN tags t ON t.id = r.tag_id WHERE r.pattern = 'OLDRULE'`
     );
     expect(rule).toEqual({ category: "Food", tag: "Lunch" });
+  });
+
+  it("moves plans bought from Goals into an Instalments category, with their payments and rules", async () => {
+    const where = async (tagId: string) =>
+      one<{ tag_cat: string; role: string | null; tx_cats: string; rule_cat: string | null }>(
+        db,
+        `SELECT c.name AS tag_cat, c.role,
+                (SELECT string_agg(DISTINCT xc.name, ',') FROM transactions x JOIN categories xc ON xc.id = x.category_id WHERE x.tag_id = t.id) AS tx_cats,
+                (SELECT rc.name FROM merchant_rules mr JOIN categories rc ON rc.id = mr.category_id WHERE mr.tag_id = t.id) AS rule_cat
+         FROM tags t JOIN categories c ON c.id = t.category_id WHERE t.id = $1`,
+        [tagId]
+      );
+    expect(await where("00000000-0000-0000-0000-0000000000b1")).toEqual({ tag_cat: "Instalments", role: "instalments", tx_cats: "Instalments", rule_cat: "Instalments" });
+    // A plan made in Settings keeps its tag where you put it.
+    expect(await where("00000000-0000-0000-0000-0000000000b2")).toEqual({ tag_cat: "Bills", role: null, tx_cats: "Bills", rule_cat: null });
+    // Only accounts with such plans get the category.
+    expect(await count(db, "SELECT count(*) AS n FROM categories WHERE role = 'instalments' AND user_id = $1", [friend])).toBe(0);
+  });
+
+  it("numbers each account's categories in name order, once", async () => {
+    const order = await db.query<{ name: string; position: number }>(
+      "SELECT name, position FROM categories WHERE user_id = $1 ORDER BY position", [owner]
+    );
+    expect(order.rows).toEqual([
+      { name: "Bills", position: 0 },
+      { name: "Food", position: 1 },
+      { name: "Instalments", position: 2 },
+    ]);
+    // A category added later has none, so it sorts after the numbered ones.
+    await rolledBack(db, async (tx) => {
+      await tx.query("INSERT INTO categories (user_id, name) VALUES ($1, 'Aaa new')", [owner]);
+      const last = await tx.query<{ name: string }>(
+        "SELECT name FROM categories WHERE user_id = $1 ORDER BY position NULLS LAST, name", [owner]
+      );
+      expect(last.rows.at(-1)?.name).toBe("Aaa new");
+    });
   });
 
   it("turns the old savings columns into accounts with the same net worth each month", async () => {
@@ -319,6 +356,39 @@ describe("auto-adding monthly bills", () => {
       expect(added.rows.map((r) => r.name)).toEqual(["Netflix", "Spotify"]);
       const runs = await tx.query<{ ok: boolean }>("SELECT ok FROM job_runs WHERE job = 'auto_bills' ORDER BY id DESC LIMIT 2");
       expect(runs.rows).toEqual([{ ok: true }, { ok: true }]);
+    });
+  });
+
+  it("adds only what a plan is still short this month (paid ahead, part-paid, paid off)", async () => {
+    await rolledBack(db, async (tx) => {
+      const month = "date_trunc('month', (now() AT TIME ZONE 'Asia/Kuala_Lumpur'))::date";
+      // 6 × RM 10 plans that started last month, so RM 20 is due by the end of this month.
+      const plan = async (name: string, payments: [string, number][]) => {
+        const tag = await one<{ id: string; category_id: string }>(tx, "SELECT id, category_id FROM tags WHERE user_id = $1 AND name = $2", [friend, name]);
+        await tx.query(
+          `INSERT INTO recurring_sentinel (user_id, tag_id, expected_amount, due_day, auto_log, installment_count, start_month)
+           VALUES ($1, $2, 10, 1, true, 6, ${month} - interval '1 month')`,
+          [friend, tag.id]
+        );
+        for (const [when, amount] of payments)
+          await tx.query(`INSERT INTO transactions (user_id, date, category_id, tag_id, amount) VALUES ($1, ${when}, $2, $3, $4)`, [
+            friend, tag.category_id, tag.id, amount,
+          ]);
+      };
+      await plan("Phone", [[`${month} - interval '1 month'`, 20]]); // paid two at once last month
+      await plan("Electric", [[`${month} - interval '1 month'`, 10], [`${month}`, 4]]); // RM 4 so far this month
+      await plan("Water", [[`${month} - interval '1 month'`, 60]]); // paid off
+      await plan("Internet", [[`${month} - interval '1 month'`, 10]]); // on track: this month's is due
+      await one(tx, "SELECT public.auto_log_bills() AS n");
+      const added = await tx.query<{ name: string; amount: string }>(
+        `SELECT t.name, x.amount::text AS amount FROM transactions x JOIN tags t ON t.id = x.tag_id
+         WHERE x.user_id = $1 AND x.description = 'Auto-added monthly bill' ORDER BY t.name`,
+        [friend]
+      );
+      expect(added.rows).toEqual([
+        { name: "Electric", amount: "6.00" },
+        { name: "Internet", amount: "10.00" },
+      ]);
     });
   });
 

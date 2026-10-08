@@ -13,7 +13,7 @@ import { SpendHero } from "@/components/spend-hero";
 import { SalaryEngine } from "@/components/salary-engine";
 import { RecurringSentinel, type BillStatus } from "@/components/recurring-sentinel";
 import { canAutoLog } from "@/lib/bills";
-import { billActiveIn } from "@/lib/instalments";
+import { billActiveIn, planShortfall } from "@/lib/instalments";
 import { categoryLabel } from "@/lib/categories";
 import { foodCategory } from "@/lib/roles";
 import { formatCurrency } from "@/lib/utils";
@@ -164,7 +164,10 @@ export default function DashboardPage() {
     .flatMap((bill) => {
       const tag = tags.find((t) => t.id === bill.tag_id);
       if (!tag) return [];
-      const isLogged = loggedTagIds.has(tag.id);
+      // Plans count what's been paid by this month (paid ahead or off = done); other bills, a
+      // payment logged this month.
+      const short = planShortfall(bill, transactions, selectedMonth);
+      const isLogged = short !== null ? short <= 0 : loggedTagIds.has(tag.id);
       const dueDate = bill.due_day ? dayStr(bill.due_day) : null;
       const daysLeft = dueDate
         ? Math.round((new Date(dueDate + "T00:00:00").getTime() - new Date(todayStr + "T00:00:00").getTime()) / 86400000)
@@ -189,7 +192,7 @@ export default function DashboardPage() {
       const last = transactions
         .filter((t) => t.tag_id === tag.id && t.date < `${selectedMonth}-01`)
         .sort((a, b) => b.date.localeCompare(a.date))[0];
-      const amount = bill.expected_amount ?? last?.amount ?? null;
+      const amount = short ?? bill.expected_amount ?? last?.amount ?? null;
       const rawDate = dueDate ?? (last ? dayStr(Number(last.date.slice(8, 10))) : null) ?? todayStr;
       return [
         {

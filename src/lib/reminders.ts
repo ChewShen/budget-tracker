@@ -1,6 +1,6 @@
 import { addDays, format, getDaysInMonth, parseISO } from "date-fns";
 import { dueDateIn } from "./bills";
-import { billActiveIn } from "./instalments";
+import { billActiveIn, planShortfall } from "./instalments";
 import { daysToExpiry } from "./goals";
 import { formatCurrency } from "./utils";
 import type { Budget, Category, Goal, RecurringBill, Tag, Transaction } from "./types";
@@ -52,7 +52,12 @@ const label = (name?: string) => (name || "Others").replace(/_/g, " ");
 function billReminders({ today, bills, tags, transactions }: ReminderData): Reminder[] {
   const tomorrow = format(addDays(parseISO(today), 1), "yyyy-MM-dd");
   const month = today.slice(0, 7);
-  const paidIn = (tagId: string, m: string) => transactions.some((t) => t.tag_id === tagId && t.date.startsWith(m));
+  // Paid for a month: an expense with the tag that month; for plans, enough paid by then (early or
+  // several at once count).
+  const paidFor = (bill: RecurringBill, m: string) => {
+    const short = planShortfall(bill, transactions, m);
+    return short !== null ? short <= 0 : transactions.some((t) => t.tag_id === bill.tag_id && t.date.startsWith(m));
+  };
 
   return bills.flatMap((bill) => {
     // Automatic bills log themselves on the due day, so there's nothing to remind about.
@@ -64,7 +69,7 @@ function billReminders({ today, bills, tags, transactions }: ReminderData): Remi
     // Due tomorrow (tomorrow can be in next month).
     // Instalment plans only remind in their own months (first to last payment).
     const nextDue = dueDateIn(tomorrow.slice(0, 7), bill.due_day);
-    if (nextDue === tomorrow && billActiveIn(bill, tomorrow.slice(0, 7)) && !paidIn(tag.id, tomorrow.slice(0, 7)))
+    if (nextDue === tomorrow && billActiveIn(bill, tomorrow.slice(0, 7)) && !paidFor(bill, tomorrow.slice(0, 7)))
       return [
         {
           key: `bill:${tag.id}:${nextDue}:soon`,
@@ -77,7 +82,7 @@ function billReminders({ today, bills, tags, transactions }: ReminderData): Remi
 
     // Overdue this month and still not logged: once per month.
     const due = dueDateIn(month, bill.due_day);
-    if (due < today && billActiveIn(bill, month) && !paidIn(tag.id, month))
+    if (due < today && billActiveIn(bill, month) && !paidFor(bill, month))
       return [
         {
           key: `bill:${tag.id}:${due}:overdue`,

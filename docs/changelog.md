@@ -15,6 +15,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.27.0] - 2026-10-08
+
+### Added
+- **Your own order for categories**: Settings → Categories & tags → **Reorder**, with ↑ ↓ on each category. Add expense, the Inbox, Activity's filters and Budgets follow it; charts still sort by amount. Existing categories start in alphabetical order; new ones go at the end (migration `2026-10-08_category_order.sql`).
+- **Reorder savings accounts** the same way (Settings → Savings accounts), which sets the order they're listed in when you record balances.
+
+---
+
+## [0.26.0] - 2026-10-08
+
+### Changed
+- **Instalment plans bought from Goals get their own category, "Instalments"** (renamable, not deletable, starred like the food category), so committed payments don't count as new Shopping or use up a Shopping budget. Bought it → Instalments no longer asks for a category; only a down payment asks for its category and tag. Existing plans bought from Goals move there with their past payments (migration `2026-10-08_instalments_category.sql`); plans made in Settings → Monthly bills stay where you put them.
+
+---
+
+## [0.25.0] - 2026-10-08
+
+### Changed
+- **Instalment payments count by amount, not by month.** Paying a month early, two months at once, or part of a month all count toward the plan ("2 of 6 paid · RM 400 left"). Auto-add and reminders skip months already covered and only add what's still short; a missed earlier month is never added on top (migration `2026-10-08_instalments_by_amount.sql` for the nightly auto-add).
+
+### Added
+- **Pay off the rest** on a plan (Goals → Paying off, and the plan in Settings → Monthly bills): logs what's left as one payment today, and the plan shows Paid off.
+
+### Fixed
+- A plan paid ahead or paid off early no longer gets the monthly amount auto-added again, and no longer shows as due.
+
+---
+
 ## [0.24.4] - 2026-10-05
 
 ### Added

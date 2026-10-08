@@ -30,6 +30,12 @@ export function foodCategory(categories: Category[]): Category | undefined {
   return categories.find((c) => c.name.toLowerCase() === "food");
 }
 
+// The category instalment plans bought from Goals go in: the marked one, else one named
+// "Instalments" (before 2026-10-08_instalments_category.sql there's no mark).
+export function instalmentsCategory(categories: Category[]): Category | undefined {
+  return categories.find((c) => c.role === "instalments") ?? categories.find((c) => c.name.toLowerCase() === "instalments");
+}
+
 // The tag Add expense suggests for this meal.
 export function mealTag(categories: Category[], tags: Tag[], meal: MealRole): Tag | undefined {
   const marked = tags.find((t) => t.role === meal);
@@ -41,6 +47,7 @@ export function mealTag(categories: Category[], tags: Tag[], meal: MealRole): Ta
 // What a marked category or tag is used for (shown next to its star in Settings).
 export function roleDescription(role: Category["role"] | Tag["role"]): string | null {
   if (role === "food") return "Used for the Food & dining card and meal suggestions";
+  if (role === "instalments") return "Instalment plans bought from Goals go here; it can be renamed but not deleted";
   const meal = MEAL_ROLES.find((m) => m.role === role);
   if (!meal) return null;
   const endsDay = role === "dinner" || role === "supper" ? `, and moves "Same as last entry" to the next day` : "";
