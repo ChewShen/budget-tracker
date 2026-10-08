@@ -15,6 +15,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.25.0] - 2026-10-08
+
+### Changed
+- **Instalment payments count by amount, not by month.** Paying a month early, two months at once, or part of a month all count toward the plan ("2 of 6 paid · RM 400 left"). Auto-add and reminders skip months already covered and only add what's still short; a missed earlier month is never added on top (migration `2026-10-08_instalments_by_amount.sql` for the nightly auto-add).
+
+### Added
+- **Pay off the rest** on a plan (Goals → Paying off, and the plan in Settings → Monthly bills): logs what's left as one payment today, and the plan shows Paid off.
+
+### Fixed
+- A plan paid ahead or paid off early no longer gets the monthly amount auto-added again, and no longer shows as due.
+
+---
+
 ## [0.24.4] - 2026-10-05
 
 ### Added
