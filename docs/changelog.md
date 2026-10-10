@@ -15,6 +15,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.27.1] - 2026-10-10
+
+### Changed
+- **Sign-in page introduces the app**: one line about what it is, **Try the demo** as the main button (the full app with made-up data), a link to how it's built, and "Accounts are by invitation".
+- **README refreshed**: new screenshots from the demo data (including Goals, the Inbox and the sign-in page) and an **Engineering highlights** section.
+
+---
+
 ## [0.27.0] - 2026-10-08
 
 ### Added

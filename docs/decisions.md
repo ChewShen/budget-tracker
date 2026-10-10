@@ -54,7 +54,7 @@ Each entry covers what was chosen, why, and what it costs. For what changed and 
 ### Three data modes: cloud, local, guest
 - **Cloud:** Supabase configured and signed in. The real app.
 - **Local:** Supabase not configured (placeholder `.env.local`). Data is kept in `localStorage`, so the app can be developed and demoed without a database.
-- **Guest:** "Continue without an account" on the login page. Generated demo data in memory only: no database requests and nothing in `localStorage`, so a refresh starts fresh. RLS would block a guest anyway; guest mode just avoids the requests.
+- **Guest:** "Try the demo" on the login page. Generated demo data in memory only: no database requests and nothing in `localStorage`, so a refresh starts fresh. RLS would block a guest anyway; guest mode just avoids the requests.
 - **Why:** A portfolio visitor can try the full app without an account, and nothing they do can touch real data.
 
 ### Demo data is generated, not real
