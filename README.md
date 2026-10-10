@@ -4,6 +4,10 @@ A full-stack, mobile-first personal finance app that replaced my Excel budget sh
 
 Hosted $100\%$ free on **Vercel** and **Supabase (PostgreSQL)** with no expiring trial periods or server costs.
 
+**▶ 75-second case study:** the problem, the constraints, the app, how it works and how it's tested (made-up demo data).
+
+https://github.com/user-attachments/assets/a3277a7f-38c4-4261-bafd-6edd312980db
+
 ## 👀 Try It Without an Account
 
 **Live app: [budget-tracker-gold-sigma.vercel.app](https://budget-tracker-gold-sigma.vercel.app)**
