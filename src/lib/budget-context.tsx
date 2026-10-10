@@ -92,7 +92,7 @@ export const DEFAULT_PROFILE: UserSalaryProfile = {
 };
 
 // cloud = Supabase account; local = no Supabase configured (localStorage cache);
-// guest = "Continue without an account" (in memory only, wiped on refresh).
+// guest = "Try the demo" (in memory only, wiped on refresh).
 export type DataMode = "cloud" | "local" | "guest";
 
 interface BudgetContextType {

@@ -35,7 +35,7 @@ Then just open the app each day: Overview shows where your month is heading.
 
 **Signing in.** Accounts are created by the person who runs the app (there's no public sign-up). You'll get your email and a temporary password. Sign in, then change the password in **Settings → Account → Change password**.
 
-**Just looking?** On the sign-in page, choose **Continue without an account**. You get the whole app with made-up sample data. Nothing is saved: refreshing starts over.
+**Just looking?** On the sign-in page, choose **Try the demo**. You get the whole app with made-up sample data. Nothing is saved: refreshing starts over.
 
 **Install it on your phone.** It works best as an app on your home screen:
 - **iPhone:** open the site in **Safari** → **Share** → **Add to Home Screen**, then open it from the new icon. (Reminders only work from the home-screen app, not a Safari tab.)

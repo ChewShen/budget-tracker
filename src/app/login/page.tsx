@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Eye, EyeOff } from "lucide-react";
+import { ArrowRight, Eye, EyeOff } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { GUEST_COOKIE, enterGuest } from "@/lib/guest";
 
@@ -46,12 +46,38 @@ export default function LoginPage() {
           <span className="text-lg font-semibold tracking-tight">Budget</span>
         </div>
 
+        {/* What this is, for someone arriving from a link (e.g. a portfolio): the demo is one tap. */}
+        <div className="mb-8 space-y-3">
+          <p className="text-sm text-muted-foreground">
+            A personal budget tracker for Malaysia: log spending in a few taps or by double-tapping a TnG receipt, and see
+            where the month is heading, bills still due, budgets, savings and goals.
+          </p>
+          <button
+            type="button"
+            onClick={enterGuest}
+            className="flex h-11 w-full items-center justify-center gap-1.5 rounded-full bg-primary text-sm font-semibold text-primary-foreground transition hover:brightness-95"
+          >
+            Try the demo <ArrowRight className="h-4 w-4" />
+          </button>
+          <p className="text-center text-xs text-muted-foreground">
+            The full app with made-up sample data. Nothing you enter is saved.{" "}
+            <a
+              href="https://github.com/ChewShen/budget-tracker"
+              target="_blank"
+              rel="noreferrer"
+              className="underline underline-offset-2 hover:text-foreground"
+            >
+              How it&apos;s built
+            </a>
+          </p>
+        </div>
+
         <h1 className="text-2xl font-semibold tracking-tight">Sign in</h1>
+        <p className="-mt-2 text-xs text-muted-foreground">Accounts are by invitation.</p>
 
         <input
           type="email"
           required
-          autoFocus
           autoComplete="username"
           placeholder="Email"
           aria-label="Email"
@@ -86,26 +112,11 @@ export default function LoginPage() {
         <button
           type="submit"
           disabled={isBusy || !email || !password}
-          className="h-11 w-full rounded-full bg-primary text-sm font-semibold text-primary-foreground transition hover:brightness-95 disabled:opacity-40"
+          className="h-11 w-full rounded-full border text-sm font-semibold transition hover:bg-secondary disabled:opacity-40"
         >
           {isBusy ? "Signing in…" : "Sign in"}
         </button>
 
-        <div className="flex items-center gap-3 pt-2 text-xs text-muted-foreground">
-          <span className="h-px flex-1 bg-border" />
-          or
-          <span className="h-px flex-1 bg-border" />
-        </div>
-        <button
-          type="button"
-          onClick={enterGuest}
-          className="h-11 w-full rounded-full border text-sm font-medium transition hover:bg-secondary"
-        >
-          Continue without an account
-        </button>
-        <p className="text-center text-xs text-muted-foreground">
-          Try it with sample data. Nothing you enter is saved, and a refresh starts over.
-        </p>
       </form>
     </div>
   );

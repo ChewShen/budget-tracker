@@ -8,7 +8,7 @@ Hosted $100\%$ free on **Vercel** and **Supabase (PostgreSQL)** with no expiring
 
 **Live app: [budget-tracker-gold-sigma.vercel.app](https://budget-tracker-gold-sigma.vercel.app)**
 
-On the sign-in page, choose **Continue without an account**. You get the full app with made-up sample data:
+On the sign-in page, tap **Try the demo**. You get the full app with made-up sample data:
 
 - Add, edit and delete expenses, set up monthly bills, categories and savings balances
 - Explore the analytics: month-end forecast, insights, spending calendar, savings rate and emergency fund
@@ -20,13 +20,28 @@ Guest mode never touches the database and stores nothing in your browser, so **n
 
 | Overview | Analytics |
 | :---: | :---: |
-| ![Overview: month total, forecast, daily spending and key stats](docs/screenshots/overview.png) | ![Insights, monthly trend and category comparison](docs/screenshots/analytics.png) |
+| ![Overview: month total, forecast, daily spending, key stats and budgets](docs/screenshots/overview.png) | ![Insights, monthly trend with forecast, categories and top tags](docs/screenshots/analytics.png) |
 
-| Savings | Mobile | Add expense |
-| :---: | :---: | :---: |
-| ![Savings: net worth by account and emergency fund](docs/screenshots/savings.png) | ![Overview on a phone](docs/screenshots/mobile-overview.png) | ![Add expense sheet with recent shortcuts and numpad](docs/screenshots/mobile-add-expense.png) |
+| Savings | Goals |
+| :---: | :---: |
+| ![Savings: net worth by account, what's owed on instalments and the emergency fund](docs/screenshots/savings.png) | ![Goals with trade-in and vouchers, and a plan being paid off](docs/screenshots/goals.png) |
+
+| Mobile | Add expense | Inbox (from a double-tap) | Sign in / demo |
+| :---: | :---: | :---: | :---: |
+| ![Overview on a phone](docs/screenshots/mobile-overview.png) | ![Add expense sheet with recent shortcuts and numpad](docs/screenshots/mobile-add-expense.png) | ![Inbox: payments read off receipts, sorted by remembered shops and the time of day](docs/screenshots/mobile-inbox.png) | ![Sign-in page with Try the demo](docs/screenshots/mobile-login.png) |
 
 *All screenshots use the app's made-up demo data.*
+
+## 🧪 Engineering Highlights
+
+What's behind the screens, in short (details and reasons in [`docs/decisions.md`](docs/decisions.md)):
+
+- **Privacy enforced by the database, and tested.** Every table has owner-only Row-Level Security, and an expense, bill, budget or rule can only point at your own categories, tags, goals and accounts. CI rebuilds the whole database from the migrations on a real Postgres ([PGlite](https://pglite.dev)), runs them all twice, and signs in as two accounts to prove neither can see, change or point at the other's data.
+- **151 automated tests** ([Vitest](https://vitest.dev)) in about a second: money and date logic (forecast, budgets, instalments by amount, reminders), the receipt reader, the Shortcut endpoint, and the database. GitHub Actions runs them with type-check, lint and a production build on every push and PR.
+- **Backups that are proven to restore.** A weekly GitHub Actions job dumps the database and encrypts it with [age](https://age-encryption.org) before upload (the repo is public); CI backs up a sample database and restores it into an empty Postgres 17 on every push, comparing what came back.
+- **Automation without bank access.** Malaysian banks don't offer third-party linking, so an iPhone Shortcut reads the payment screen on the phone and sends only the text. One rule-based reader (no AI, nothing sent to third parties) handles TnG, banking apps and shop apps, grown from real receipts, each kept as a test with made-up details.
+- **Background jobs that report back.** Nightly reminders (Vercel Cron + Web Push), bill auto-add (`pg_cron`) and backups log each run; the app warns when one fails or stops.
+- **Free to run:** Vercel, Supabase and GitHub free plans.
 
 ---
 
@@ -35,7 +50,7 @@ Guest mode never touches the database and stores nothing in your browser, so **n
 ### ⚡ Fast entry
 - **Add an expense in a few taps**: numpad sheet, **Recent** shortcuts (tag + last amount), and a tag picked for the time of day (breakfast, lunch, dinner…), which keeps working if you rename it.
 - **Edit or delete** any entry, with a 5-second **Undo**; failed saves roll back with **Retry**.
-- **Your own categories and tags** (with icons), created in Settings or on the spot while adding.
+- **Your own categories and tags** (with icons), created in Settings or on the spot while adding, in **your own order**.
 - Installable **PWA** for iOS/Android home screens; keyboard entry on desktop.
 
 ### 📊 Analytics
@@ -47,13 +62,14 @@ Guest mode never touches the database and stores nothing in your browser, so **n
 ### 🤖 Automation
 - **iPhone Shortcuts send expenses to an Inbox**: double-tap the back of the phone on a TnG (or any) payment screen and it's read on the phone and sent; Apple Pay purchases can be sent automatically; or say "Hey Siri, log expense".
 - **Inbox to confirm**: amount, merchant and date are filled in; check, pick or change the tag, and add. Nothing goes into your spending unconfirmed.
-- **Merchant rules**: confirming "Tealive → Coffee" means the next Tealive payment arrives already tagged.
+- **Shops it remembers**: tick Remember and a shop's next payments arrive sorted: "always food, meal by time" (a mamak at 8am is Breakfast, at 9pm Dinner) or "always Food · Coffee". Managed in Settings → Automation.
+- **Works with banking apps too** (Hong Leong Bank, Public Bank via its shared receipt, ZUS…), and apps that block screenshots can share their receipt to a "Log Receipt" shortcut instead.
 - **Personal tokens** (Settings → Automation): only a hash is stored, a token can only add Inbox items (never read data), and it can be revoked any time.
 
 ### 🧾 Monthly bills
 - Choose which tags are monthly bills, with an optional **expected amount** and **due day**.
 - Overview shows **Logged / Due in 2 days / Overdue / Missing**, and logs unpaid bills in one tap.
-- **Instalment plans** are bills that end: they only count (forecast, budgets, reminders, auto-add) from the first payment to the last.
+- **Instalment plans** are bills that end: they only count (forecast, budgets, reminders, auto-add) from the first payment to the last. Payments count **by amount**, so paying early, two months at once or the rest at once all work; **Pay off the rest** settles it in one tap.
 - **Auto-add** fixed bills on their due day via a daily **pg_cron** job in Postgres.
 
 ### 🚦 Budgets & reminders
@@ -70,7 +86,7 @@ Guest mode never touches the database and stores nothing in your browser, so **n
 - Save toward things you want: progress, "set aside RM X/month to make it by <date>" with **on track / behind**, or when you'll be ready at your pace.
 - **Trade-in value** and **discounts & vouchers** (RM or %, with expiry dates) come off the target; expiring vouchers are flagged, expired ones stop counting.
 - **Bought it** logs what you paid as a one-off expense; money set aside for goals is kept separate from your emergency fund.
-- **Bought on instalments** (Atome, SPayLater, 0% card plans…): down payment (prefilled with what you set aside), number of payments and optional interest/fees. Each payment becomes a monthly bill that ends after the last one, with reminders and auto-add; the goal shows **Paying off: 2 of 12 paid · RM 3,749 left**, and Savings shows what's still owed and **net worth after what you owe**.
+- **Bought on instalments** (Atome, SPayLater, 0% card plans…): down payment (prefilled with what you set aside), number of payments and optional interest/fees. Each payment becomes a monthly bill that ends after the last one, with reminders and auto-add; the goal shows **Paying off: 2 of 12 paid · RM 3,749 left**, and Savings shows what's still owed and **net worth after what you owe**. Plan payments go under their own **Instalments** category, so they don't count as new shopping.
 
 ### 🔐 Data & privacy
 - **Email + password sign-in**, no public sign-up; every table locked with owner-only **Row-Level Security**.
@@ -227,7 +243,7 @@ To bring in history from an Excel budget sheet (same layout as `Monthly Budget.x
 
 Your spreadsheet and the generated `seed_data.sql` contain real financial data, so both are **gitignored**; keep them out of the repository.
 
-Without a spreadsheet, the app still works: add categories and tags in **Settings**, or try it first with **Continue without an account** (sample data, nothing saved).
+Without a spreadsheet, the app still works: add categories and tags in **Settings**, or try it first with **Try the demo** (sample data, nothing saved).
 
 ### 3. Lock the Database to Your Account
 The seed script opens the tables so data can be loaded. Close them afterwards:
