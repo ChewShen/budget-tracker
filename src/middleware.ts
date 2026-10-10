@@ -31,7 +31,7 @@ export async function middleware(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const isLoginPage = request.nextUrl.pathname === "/login";
-  // Guests ("Continue without an account") only ever see in-memory demo data; RLS still
+  // Guests ("Try the demo") only ever see in-memory demo data; RLS still
   // blocks them from the database, so letting them past this redirect exposes nothing.
   const isGuest = request.cookies.get(GUEST_COOKIE)?.value === "1";
 
